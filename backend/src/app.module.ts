@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import {
   Tenant,
   Doctor,
@@ -16,10 +17,12 @@ import { AppointmentsController } from './controllers/appointments.controller';
 import { AvailabilityController } from './controllers/availability.controller';
 import { DoctorsController } from './controllers/doctors.controller';
 import { ServicesController } from './controllers/services.controller';
+import { PartitionMaintenanceController } from './controllers/partition-maintenance.controller';
 import { AppointmentsService } from './services/appointments.service';
 import { AvailabilityService } from './services/availability.service';
 import { DoctorsService } from './services/doctors.service';
 import { ServicesService } from './services/services.service';
+import { PartitionMaintenanceService } from './services/partition-maintenance.service';
 import { TenantGuard } from './guards/tenant.guard';
 
 @Module({
@@ -27,6 +30,7 @@ import { TenantGuard } from './guards/tenant.guard';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    ScheduleModule.forRoot(),
     TypeOrmModule.forRoot({
       type: 'postgres',
       // Use DATABASE_URL if available (Neon connection string), otherwise use individual params
@@ -78,12 +82,14 @@ import { TenantGuard } from './guards/tenant.guard';
     AvailabilityController,
     DoctorsController,
     ServicesController,
+    PartitionMaintenanceController,
   ],
   providers: [
     AppointmentsService,
     AvailabilityService,
     DoctorsService,
     ServicesService,
+    PartitionMaintenanceService,
     TenantGuard,
   ],
 })

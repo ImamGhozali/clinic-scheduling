@@ -132,11 +132,13 @@ ON CONFLICT DO NOTHING;
 -- ============================================
 -- 8. SAMPLE APPOINTMENTS (Optional - for testing)
 -- ============================================
--- Note: These are example appointments. Adjust dates to current/future dates for testing.
--- All times are in UTC - convert to Europe/Berlin timezone for display
+-- Note: Using fixed dates across Dec 2025, Jan 2026, Feb 2026 to test 3-partition setup
+-- All times are in UTC
+-- 
+-- IMPORTANT: With partitioned tables, appointments must fall within existing partition ranges.
+-- The DDL creates partitions for Dec 2025, Jan 2026, Feb 2026. Use create_future_partitions() to add more.
 
--- Example: Appointment tomorrow at 10:00 AM Berlin time (09:00 UTC in winter, 08:00 UTC in summer)
--- Adjust these dates based on when you're running the seed
+-- Dr. Sarah Smith - General checkup on Dec 15, 2025 at 10:00 AM Berlin time (09:00 UTC)
 INSERT INTO appointments (id, tenant_id, doctor_id, patient_id, service_id, room_id, starts_at, ends_at, status) 
 VALUES 
 (
@@ -146,8 +148,35 @@ VALUES
     201,
     501,
     301,
-    (CURRENT_DATE + INTERVAL '1 day')::date + TIME '09:00:00' AT TIME ZONE 'Europe/Berlin' AT TIME ZONE 'UTC',
-    (CURRENT_DATE + INTERVAL '1 day')::date + TIME '09:30:00' AT TIME ZONE 'Europe/Berlin' AT TIME ZONE 'UTC',
+    '2025-12-15 09:00:00+00'::TIMESTAMPTZ,
+    '2025-12-15 09:30:00+00'::TIMESTAMPTZ,
+    'scheduled'
+)
+ON CONFLICT DO NOTHING;
+
+-- Add more sample appointments across different months for testing
+INSERT INTO appointments (tenant_id, doctor_id, patient_id, service_id, room_id, starts_at, ends_at, status) 
+VALUES 
+-- Dr. John Doe - Cardiology consultation on Jan 15, 2026 at 3:00 PM Berlin time (14:00 UTC)
+(
+    1,
+    102,
+    202,
+    502,
+    302,
+    '2026-01-15 14:00:00+00'::TIMESTAMPTZ,
+    '2026-01-15 14:45:00+00'::TIMESTAMPTZ,
+    'scheduled'
+),
+-- Dr. Emily Johnson - Pediatric visit on Feb 10, 2026 at 10:00 AM Berlin time (09:00 UTC)
+(
+    1,
+    103,
+    203,
+    503,
+    303,
+    '2026-02-10 09:00:00+00'::TIMESTAMPTZ,
+    '2026-02-10 09:30:00+00'::TIMESTAMPTZ,
     'scheduled'
 )
 ON CONFLICT DO NOTHING;
@@ -167,7 +196,7 @@ SELECT setval('appointments_id_seq', (SELECT MAX(id) FROM appointments));
 -- - 4 services (IDs: 501-504)
 -- - Doctor-service relationships (which doctors can perform which services)
 -- - Working hours for all doctors (Mon-Fri)
--- - 1 sample appointment (ID: 1001)
+-- - 3 sample appointments (IDs: 1001+)
 -- 
 -- ID Ranges:
 -- - Tenants: 1-99
@@ -197,5 +226,18 @@ SELECT
     (SELECT COUNT(*) FROM doctors) as doctors,
     (SELECT COUNT(*) FROM patients) as patients,
     (SELECT COUNT(*) FROM rooms) as rooms,
+    (SELECT COUNT(*) FROM devices) as devices,
     (SELECT COUNT(*) FROM services) as services,
-    (SELECT COUNT(*) FROM working_hours) as working_hours;
+    (SELECT COUNT(*) FROM working_hours) as working_hours,
+    (SELECT COUNT(*) FROM appointments) as appointments;
+
+-- Show partition distribution
+SELECT 
+    'Partition Distribution:' as info;
+    
+SELECT 
+    tableoid::regclass AS partition,
+    COUNT(*) AS appointments
+FROM appointments
+GROUP BY tableoid
+ORDER BY partition;
