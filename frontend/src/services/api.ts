@@ -12,7 +12,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 class ApiService {
   private api: AxiosInstance;
-  private tenantId: string = 'downtown-clinic'; // Default tenant
+  private tenantId: number = 1; // Default tenant ID (Downtown Clinic)
 
   constructor() {
     this.api = axios.create({
@@ -24,12 +24,12 @@ class ApiService {
 
     // Add tenant header to all requests
     this.api.interceptors.request.use((config) => {
-      config.headers['X-Tenant-Id'] = this.tenantId;
+      config.headers['X-Tenant-Id'] = this.tenantId.toString();
       return config;
     });
   }
 
-  setTenant(tenantId: string) {
+  setTenant(tenantId: number) {
     this.tenantId = tenantId;
   }
 

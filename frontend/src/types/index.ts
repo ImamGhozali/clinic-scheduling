@@ -56,6 +56,7 @@ export interface AvailabilityResponse {
 
 export interface CreateAppointmentRequest {
   doctor_id: number;
+  service_id: number;
   patient_name: string;
   patient_email?: string;
   patient_phone?: string;

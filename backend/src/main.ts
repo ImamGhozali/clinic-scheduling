@@ -36,7 +36,7 @@ async function bootstrap() {
         type: 'apiKey',
         name: 'X-Tenant-Id',
         in: 'header',
-        description: 'Tenant identifier for multi-tenant isolation',
+        description: 'Tenant ID (numeric) for multi-tenant isolation. Example: 1',
       },
       'X-Tenant-Id',
     )

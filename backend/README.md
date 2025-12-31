@@ -97,14 +97,14 @@ Once running, visit:
 All endpoints require an `X-Tenant-Id` header:
 
 ```bash
-curl -H "X-Tenant-Id: downtown-clinic" \
+curl -H "X-Tenant-Id: 1" \
      http://localhost:3000/api/doctors
 ```
 
 ### Test Tenants
 
-- `downtown-clinic`
-- `westside-medical`
+- ID: `1` - Downtown Clinic
+- ID: `2` - Westside Medical (if seeded)
 
 ## Performance
 
