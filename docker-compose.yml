@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: clinic-db
+    environment:
+      POSTGRES_USER: clinic_user
+      POSTGRES_PASSWORD: clinic_password
+      POSTGRES_DB: clinic_scheduling
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U clinic_user -d clinic_scheduling"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - clinic-network
+
+  # Backend API (TypeScript)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: clinic-backend
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      DATABASE_URL: postgresql://clinic_user:clinic_password@postgres:5432/clinic_scheduling
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+      - /app/dist
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: npm run dev
+    networks:
+      - clinic-network
+
+  # Frontend React App (Vite)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: clinic-frontend
+    environment:
+      VITE_API_URL: http://localhost:3000
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    command: npm run dev
+    networks:
+      - clinic-network
+
+volumes:
+  postgres_data:
+
+networks:
+  clinic-network:
+    driver: bridge
