@@ -1,6 +1,6 @@
 export interface Doctor {
-  id: string;
-  tenant_id: string;
+  id: number;
+  tenant_id: number;
   name: string;
   email: string | null;
   specialty: string | null;
@@ -11,9 +11,9 @@ export interface Doctor {
 }
 
 export interface Appointment {
-  id: string;
-  tenant_id: string;
-  doctor_id: string;
+  id: number;
+  tenant_id: number;
+  doctor_id: number;
   patient_name: string;
   patient_email: string | null;
   patient_phone: string | null;
@@ -26,8 +26,8 @@ export interface Appointment {
 }
 
 export interface Service {
-  id: string;
-  tenant_id: string;
+  id: number;
+  tenant_id: number;
   name: string;
   description: string | null;
   duration_min: number;
@@ -40,11 +40,11 @@ export interface Service {
 }
 
 export interface TimeSlot {
-  doctor_id: string;
+  doctor_id: number;
   doctor_name: string;
-  room_id: string;
+  room_id: number;
   room_name: string;
-  device_ids: string[];
+  device_ids: number[];
   start: string;
   end: string;
 }
@@ -55,7 +55,7 @@ export interface AvailabilityResponse {
 }
 
 export interface CreateAppointmentRequest {
-  doctor_id: string;
+  doctor_id: number;
   patient_name: string;
   patient_email?: string;
   patient_phone?: string;

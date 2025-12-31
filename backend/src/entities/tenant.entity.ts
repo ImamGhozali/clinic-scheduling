@@ -9,8 +9,8 @@ import {
 
 @Entity('tenants')
 export class Tenant {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn()
+  id: number;
 
   @Column({ length: 255 })
   name: string;

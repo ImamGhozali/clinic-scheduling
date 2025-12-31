@@ -29,40 +29,40 @@ export enum AppointmentStatus {
 @Index(['tenantId', 'roomId', 'startsAt'])
 @Index(['tenantId', 'startsAt'])
 export class Appointment {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn()
+  id: number;
 
-  @Column({ name: 'tenant_id', type: 'uuid' })
+  @Column({ name: 'tenant_id', type: 'int' })
   @Index()
-  tenantId: string;
+  tenantId: number;
 
   @ManyToOne(() => Tenant)
   @JoinColumn({ name: 'tenant_id' })
   tenant: Tenant;
 
-  @Column({ name: 'doctor_id', type: 'uuid' })
-  doctorId: string;
+  @Column({ name: 'doctor_id', type: 'int' })
+  doctorId: number;
 
   @ManyToOne(() => Doctor, (doctor) => doctor.appointments)
   @JoinColumn({ name: 'doctor_id' })
   doctor: Doctor;
 
-  @Column({ name: 'patient_id', type: 'uuid' })
-  patientId: string;
+  @Column({ name: 'patient_id', type: 'int' })
+  patientId: number;
 
   @ManyToOne(() => Patient)
   @JoinColumn({ name: 'patient_id' })
   patient: Patient;
 
-  @Column({ name: 'service_id', type: 'uuid', nullable: true })
-  serviceId: string;
+  @Column({ name: 'service_id', type: 'int', nullable: true })
+  serviceId: number;
 
   @ManyToOne(() => Service)
   @JoinColumn({ name: 'service_id' })
   service: Service;
 
-  @Column({ name: 'room_id', type: 'uuid' })
-  roomId: string;
+  @Column({ name: 'room_id', type: 'int' })
+  roomId: number;
 
   @ManyToOne(() => Room)
   @JoinColumn({ name: 'room_id' })

@@ -43,7 +43,7 @@ export class AppointmentsService {
    * Uses database transaction for concurrency safety
    */
   async createAppointment(
-    tenantId: string,
+    tenantId: number,
     dto: CreateAppointmentDto,
   ): Promise<Appointment> {
     const result = await this.dataSource.transaction(async (manager) => {
@@ -148,10 +148,10 @@ export class AppointmentsService {
    */
   private async detectConflicts(
     manager: any,
-    tenantId: string,
-    doctorId: string,
-    roomId: string,
-    deviceIds: string[],
+    tenantId: number,
+    doctorId: number,
+    roomId: number,
+    deviceIds: number[],
     startsAt: Date,
     endsAt: Date,
   ): Promise<ConflictDetails[]> {
@@ -253,10 +253,10 @@ export class AppointmentsService {
    */
   private async checkBreaks(
     manager: any,
-    tenantId: string,
-    doctorId: string,
-    roomId: string,
-    deviceIds: string[],
+    tenantId: number,
+    doctorId: number,
+    roomId: number,
+    deviceIds: number[],
     startsAt: Date,
     endsAt: Date,
   ): Promise<void> {
@@ -294,8 +294,8 @@ export class AppointmentsService {
    * Cancel an appointment
    */
   async cancelAppointment(
-    tenantId: string,
-    appointmentId: string,
+    tenantId: number,
+    appointmentId: number,
   ): Promise<Appointment> {
     const appointment = await this.appointmentRepository.findOne({
       where: { id: appointmentId, tenantId },
@@ -316,8 +316,8 @@ export class AppointmentsService {
    * Get appointment by ID
    */
   async getAppointment(
-    tenantId: string,
-    appointmentId: string,
+    tenantId: number,
+    appointmentId: number,
   ): Promise<Appointment> {
     const appointment = await this.appointmentRepository.findOne({
       where: { id: appointmentId, tenantId },
@@ -337,10 +337,10 @@ export class AppointmentsService {
    * List appointments with filters
    */
   async listAppointments(
-    tenantId: string,
+    tenantId: number,
     filters: {
-      doctorId?: string;
-      patientId?: string;
+      doctorId?: number;
+      patientId?: number;
       status?: AppointmentStatus;
       from?: string;
       to?: string;
@@ -388,8 +388,8 @@ export class AppointmentsService {
    * Get doctor's schedule for a date range
    */
   async getDoctorSchedule(
-    tenantId: string,
-    doctorId: string,
+    tenantId: number,
+    doctorId: number,
     from: string,
     to: string,
   ): Promise<Appointment[]> {

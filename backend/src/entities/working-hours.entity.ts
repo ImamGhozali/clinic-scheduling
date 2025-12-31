@@ -13,19 +13,19 @@ import { Doctor } from './doctor.entity';
 @Entity('working_hours')
 @Index(['tenantId', 'doctorId', 'dayOfWeek'])
 export class WorkingHours {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn()
+  id: number;
 
-  @Column({ name: 'tenant_id', type: 'uuid' })
+  @Column({ name: 'tenant_id', type: 'int' })
   @Index()
-  tenantId: string;
+  tenantId: number;
 
   @ManyToOne(() => Tenant)
   @JoinColumn({ name: 'tenant_id' })
   tenant: Tenant;
 
-  @Column({ name: 'doctor_id', type: 'uuid' })
-  doctorId: string;
+  @Column({ name: 'doctor_id', type: 'int' })
+  doctorId: number;
 
   @ManyToOne(() => Doctor, (doctor) => doctor.workingHours)
   @JoinColumn({ name: 'doctor_id' })

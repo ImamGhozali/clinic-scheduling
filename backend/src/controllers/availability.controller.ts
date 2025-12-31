@@ -74,9 +74,9 @@ export class AvailabilityController {
     @GetTenant() tenant: Tenant,
     @Query() query: AvailabilityQueryDto,
   ) {
-    // Parse doctor_ids if provided
+    // Parse doctor_ids if provided (convert strings to numbers)
     const doctorIds = query.doctor_ids
-      ? query.doctor_ids.split(',').map((id) => id.trim())
+      ? query.doctor_ids.split(',').map((id) => parseInt(id.trim(), 10))
       : undefined;
 
     return await this.availabilityService.searchAvailability(

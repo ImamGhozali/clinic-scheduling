@@ -41,19 +41,19 @@ class ApiService {
   // Doctors
   // ============================================
 
-  async getDoctors(serviceId?: string): Promise<Doctor[]> {
+  async getDoctors(serviceId?: number): Promise<Doctor[]> {
     const params = serviceId ? { service_id: serviceId } : {};
     const response = await this.api.get<Doctor[]>('/api/doctors', { params });
     return response.data;
   }
 
-  async getDoctor(id: string): Promise<Doctor> {
+  async getDoctor(id: number): Promise<Doctor> {
     const response = await this.api.get<Doctor>(`/api/doctors/${id}`);
     return response.data;
   }
 
   async getDoctorSchedule(
-    doctorId: string,
+    doctorId: number,
     from: string,
     to: string
   ): Promise<Appointment[]> {
@@ -73,7 +73,7 @@ class ApiService {
     return response.data;
   }
 
-  async getService(id: string): Promise<Service> {
+  async getService(id: number): Promise<Service> {
     const response = await this.api.get<Service>(`/api/services/${id}`);
     return response.data;
   }
@@ -83,10 +83,10 @@ class ApiService {
   // ============================================
 
   async getAvailability(
-    serviceId: string,
+    serviceId: number,
     from: string,
     to: string,
-    doctorIds?: string[]
+    doctorIds?: number[]
   ): Promise<AvailabilityResponse> {
     const params: any = {
       service_id: serviceId,
@@ -118,7 +118,7 @@ class ApiService {
   }
 
   async getAppointments(filters?: {
-    doctor_id?: string;
+    doctor_id?: number;
     status?: string;
     from?: string;
     to?: string;
@@ -130,14 +130,14 @@ class ApiService {
     return response.data;
   }
 
-  async getAppointment(id: string): Promise<Appointment> {
+  async getAppointment(id: number): Promise<Appointment> {
     const response = await this.api.get<Appointment>(
       `/api/appointments/${id}`
     );
     return response.data;
   }
 
-  async cancelAppointment(id: string): Promise<Appointment> {
+  async cancelAppointment(id: number): Promise<Appointment> {
     const response = await this.api.delete<Appointment>(
       `/api/appointments/${id}`
     );

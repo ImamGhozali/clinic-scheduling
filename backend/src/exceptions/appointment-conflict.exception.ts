@@ -2,8 +2,8 @@ import { ConflictException } from '@nestjs/common';
 
 export interface ConflictDetails {
   resource: 'doctor' | 'room' | 'device';
-  resourceId: string;
-  conflictingAppointmentId: string;
+  resourceId: number;
+  conflictingAppointmentId: number;
   conflictingTime: {
     starts_at: string;
     ends_at: string;

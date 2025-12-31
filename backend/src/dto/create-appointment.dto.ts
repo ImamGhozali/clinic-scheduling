@@ -1,13 +1,16 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsUUID, IsISO8601, IsOptional, IsArray, IsString } from 'class-validator';
+import { IsInt, IsISO8601, IsOptional, IsArray, IsString, IsPositive } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class CreateAppointmentDto {
   @ApiProperty({
     description: 'Doctor ID',
-    example: '550e8400-e29b-41d4-a716-446655440000',
+    example: 101,
   })
-  @IsUUID()
-  doctor_id: string;
+  @IsInt()
+  @IsPositive()
+  @Type(() => Number)
+  doctor_id: number;
 
   @ApiProperty({
     description: 'Patient name',

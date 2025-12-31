@@ -10,14 +10,14 @@ export class ServicesService {
     private serviceRepository: Repository<Service>,
   ) {}
 
-  async getServices(tenantId: string): Promise<Service[]> {
+  async getServices(tenantId: number): Promise<Service[]> {
     return await this.serviceRepository.find({
       where: { tenantId },
       order: { name: 'ASC' },
     });
   }
 
-  async getService(tenantId: string, id: string): Promise<Service | null> {
+  async getService(tenantId: number, id: number): Promise<Service | null> {
     return await this.serviceRepository.findOne({
       where: { id, tenantId },
     });

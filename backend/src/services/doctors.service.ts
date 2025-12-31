@@ -13,7 +13,7 @@ export class DoctorsService {
   /**
    * Get all doctors for a tenant, optionally filtered by service
    */
-  async getDoctors(tenantId: string, serviceId?: string): Promise<Doctor[]> {
+  async getDoctors(tenantId: number, serviceId?: number): Promise<Doctor[]> {
     const query = this.doctorRepository
       .createQueryBuilder('doctor')
       .where('doctor.tenant_id = :tenantId', { tenantId })
@@ -34,7 +34,7 @@ export class DoctorsService {
   /**
    * Get a single doctor by ID
    */
-  async getDoctor(tenantId: string, doctorId: string): Promise<Doctor> {
+  async getDoctor(tenantId: number, doctorId: number): Promise<Doctor> {
     const doctor = await this.doctorRepository.findOne({
       where: { id: doctorId, tenantId, isActive: true },
     });

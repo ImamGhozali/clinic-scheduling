@@ -16,11 +16,11 @@ import { addMinutes, parseISO, format, getDay } from 'date-fns';
 import { utcToZonedTime, zonedTimeToUtc } from 'date-fns-tz';
 
 export interface AvailabilitySlot {
-  doctor_id: string;
+  doctor_id: number;
   doctor_name: string;
-  room_id: string;
+  room_id: number;
   room_name: string;
-  device_ids: string[];
+  device_ids: number[];
   start: string; // ISO 8601
   end: string; // ISO 8601
 }
@@ -54,11 +54,11 @@ export class AvailabilityService {
    * This is the core availability algorithm per the assessment requirements
    */
   async searchAvailability(
-    tenantId: string,
-    serviceId: string,
+    tenantId: number,
+    serviceId: number,
     from: string,
     to: string,
-    doctorIds?: string[],
+    doctorIds?: number[],
   ): Promise<AvailabilitySearchResult> {
     // 1. Get service details
     const service = await this.serviceRepository.findOne({
@@ -219,8 +219,8 @@ export class AvailabilityService {
    * Check if a time slot is within doctor's working hours
    */
   private async isWithinWorkingHours(
-    tenantId: string,
-    doctorId: string,
+    tenantId: number,
+    doctorId: number,
     slotStart: Date,
     durationMinutes: number,
   ): Promise<boolean> {
@@ -257,9 +257,9 @@ export class AvailabilityService {
   private hasConflict(
     appointments: Appointment[],
     breaks: Break[],
-    doctorId: string,
-    roomId: string,
-    deviceIds: string[],
+    doctorId: number,
+    roomId: number,
+    deviceIds: number[],
     slotStart: Date,
     slotEnd: Date,
   ): boolean {
