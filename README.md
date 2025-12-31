@@ -152,16 +152,16 @@ Visit http://localhost:3000/api-docs for full Swagger UI documentation.
 
 #### Authentication
 
-All endpoints require an `X-Tenant-Id` header:
+All endpoints require an `X-Tenant-Id` header with the tenant ID (numeric):
 
 ```bash
-curl -H "X-Tenant-Id: downtown-clinic" \
+curl -H "X-Tenant-Id: 1" \
      http://localhost:3000/api/doctors
 ```
 
 **Test Tenants:**
-- `downtown-clinic`
-- `westside-medical`
+- ID: `1` - Downtown Clinic
+- ID: `2` - Westside Medical (if seeded)
 
 #### Key Endpoints
 
@@ -178,21 +178,22 @@ curl -H "X-Tenant-Id: downtown-clinic" \
 ```bash
 curl -X POST http://localhost:3000/api/appointments \
   -H "Content-Type: application/json" \
-  -H "X-Tenant-Id: downtown-clinic" \
+  -H "X-Tenant-Id: 1" \
   -d '{
-    "doctor_id": "aaaa1111-1111-1111-1111-111111111111",
+    "doctor_id": 101,
+    "service_id": 501,
     "patient_name": "John Doe",
     "patient_email": "john@example.com",
-    "starts_at": "2025-01-15T10:00:00Z",
-    "ends_at": "2025-01-15T10:30:00Z"
+    "starts_at": "2025-12-20T10:00:00+00:00",
+    "ends_at": "2025-12-20T10:30:00+00:00"
   }'
 ```
 
 #### Example: Search Availability
 
 ```bash
-curl "http://localhost:3000/api/availability?doctor_id=aaaa1111-1111-1111-1111-111111111111&date=2025-01-15" \
-  -H "X-Tenant-Id: downtown-clinic"
+curl "http://localhost:3000/api/availability?service_id=501&from=2025-12-20T08:00:00%2B00:00&to=2025-12-20T18:00:00%2B00:00" \
+  -H "X-Tenant-Id: 1"
 ```
 
 ## 🌐 Deployment
@@ -309,7 +310,7 @@ brew install httpd  # macOS
 apt-get install apache2-utils  # Linux
 
 # Test availability endpoint
-ab -n 1000 -c 100 -H "X-Tenant-Id: downtown-clinic" \
+ab -n 1000 -c 100 -H "X-Tenant-Id: 1" \
    "http://localhost:3000/api/doctors"
 ```
 

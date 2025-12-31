@@ -184,6 +184,39 @@ ON CONFLICT DO NOTHING;
 SELECT setval('appointments_id_seq', (SELECT MAX(id) FROM appointments));
 
 -- ============================================
+-- 9. BREAKS (Testing break detection)
+-- ============================================
+-- Add breaks to test the break detection logic for doctors, rooms, and devices
+-- All times are in UTC (Berlin time - 1 hour during winter)
+
+INSERT INTO breaks (tenant_id, resource_type, resource_id, starts_at, ends_at, reason)
+VALUES 
+-- Dr. Sarah Smith lunch breaks (12:00-13:00 Berlin = 11:00-12:00 UTC)
+-- Multiple days for testing
+(1, 'doctor', 101, '2025-12-15 11:00:00+00'::TIMESTAMPTZ, '2025-12-15 12:00:00+00'::TIMESTAMPTZ, 'Lunch break'),
+(1, 'doctor', 101, '2025-12-16 11:00:00+00'::TIMESTAMPTZ, '2025-12-16 12:00:00+00'::TIMESTAMPTZ, 'Lunch break'),
+(1, 'doctor', 101, '2025-12-17 11:00:00+00'::TIMESTAMPTZ, '2025-12-17 12:00:00+00'::TIMESTAMPTZ, 'Lunch break'),
+(1, 'doctor', 101, '2025-12-18 11:00:00+00'::TIMESTAMPTZ, '2025-12-18 12:00:00+00'::TIMESTAMPTZ, 'Lunch break'),
+(1, 'doctor', 101, '2025-12-19 11:00:00+00'::TIMESTAMPTZ, '2025-12-19 12:00:00+00'::TIMESTAMPTZ, 'Lunch break'),
+
+-- Dr. John Doe lunch breaks (13:00-14:00 Berlin = 12:00-13:00 UTC)
+(1, 'doctor', 102, '2026-01-15 12:00:00+00'::TIMESTAMPTZ, '2026-01-15 13:00:00+00'::TIMESTAMPTZ, 'Lunch break'),
+(1, 'doctor', 102, '2026-01-16 12:00:00+00'::TIMESTAMPTZ, '2026-01-16 13:00:00+00'::TIMESTAMPTZ, 'Lunch break'),
+
+-- Dr. Emily Johnson lunch breaks (12:00-12:30 Berlin = 11:00-11:30 UTC)
+(1, 'doctor', 103, '2026-02-10 11:00:00+00'::TIMESTAMPTZ, '2026-02-10 11:30:00+00'::TIMESTAMPTZ, 'Lunch break'),
+(1, 'doctor', 103, '2026-02-11 11:00:00+00'::TIMESTAMPTZ, '2026-02-11 11:30:00+00'::TIMESTAMPTZ, 'Lunch break'),
+
+-- Room maintenance windows
+(1, 'room', 301, '2025-12-15 13:00:00+00'::TIMESTAMPTZ, '2025-12-15 14:00:00+00'::TIMESTAMPTZ, 'Deep cleaning and maintenance'),
+(1, 'room', 302, '2026-01-15 15:00:00+00'::TIMESTAMPTZ, '2026-01-15 16:00:00+00'::TIMESTAMPTZ, 'Equipment upgrade'),
+
+-- Device calibration and maintenance
+(1, 'device', 401, '2026-01-15 09:00:00+00'::TIMESTAMPTZ, '2026-01-15 10:00:00+00'::TIMESTAMPTZ, 'ECG machine calibration'),
+(1, 'device', 402, '2026-02-10 14:00:00+00'::TIMESTAMPTZ, '2026-02-10 15:00:00+00'::TIMESTAMPTZ, 'Ultrasound scanner maintenance')
+ON CONFLICT DO NOTHING;
+
+-- ============================================
 -- SEED DATA COMPLETE
 -- ============================================
 -- 
@@ -197,6 +230,7 @@ SELECT setval('appointments_id_seq', (SELECT MAX(id) FROM appointments));
 -- - Doctor-service relationships (which doctors can perform which services)
 -- - Working hours for all doctors (Mon-Fri)
 -- - 3 sample appointments (IDs: 1001+)
+-- - 14 breaks (lunch breaks, room maintenance, device calibration)
 -- 
 -- ID Ranges:
 -- - Tenants: 1-99
@@ -229,7 +263,8 @@ SELECT
     (SELECT COUNT(*) FROM devices) as devices,
     (SELECT COUNT(*) FROM services) as services,
     (SELECT COUNT(*) FROM working_hours) as working_hours,
-    (SELECT COUNT(*) FROM appointments) as appointments;
+    (SELECT COUNT(*) FROM appointments) as appointments,
+    (SELECT COUNT(*) FROM breaks) as breaks;
 
 -- Show partition distribution
 SELECT 

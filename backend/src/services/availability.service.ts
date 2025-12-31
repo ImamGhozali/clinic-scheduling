@@ -52,6 +52,15 @@ export class AvailabilityService {
   /**
    * Search for next 3 available time slots for a service
    * This is the core availability algorithm per the assessment requirements
+   * 
+   * Note: Always returns future slots. If 'from' is in the past, search starts from current time.
+   * 
+   * @param tenantId - Tenant identifier
+   * @param serviceId - Service to book
+   * @param from - Start of search window (ISO 8601)
+   * @param to - End of search window (ISO 8601)
+   * @param doctorIds - Optional array of doctor IDs to filter by
+   * @returns Up to 3 available time slots
    */
   async searchAvailability(
     tenantId: number,
@@ -119,6 +128,15 @@ export class AvailabilityService {
     const startDate = parseISO(from);
     const endDate = parseISO(to);
 
+    // Ensure we only search for future slots (start from now if 'from' is in the past)
+    const now = new Date();
+    const searchStartDate = startDate < now ? now : startDate;
+
+    // If search start is after end date, return empty results
+    if (searchStartDate >= endDate) {
+      return { slots: [], limit: 3 };
+    }
+
     // 6. Get all appointments in range for conflict checking
     const appointments = await this.appointmentRepository.find({
       where: {
@@ -144,9 +162,10 @@ export class AvailabilityService {
     const bufferAfter = service.bufferAfterMin;
     const totalDuration = slotDuration + bufferBefore + bufferAfter;
 
-    // Iterate through time slots (15-minute increments for efficiency)
-    let currentTime = startDate;
-    const increment = 15; // minutes
+    // Use service duration as search increment for realistic clinic scheduling
+    // Start from current time or requested start time, whichever is later
+    let currentTime = searchStartDate;
+    const searchIncrement = slotDuration; // Search at service duration intervals
 
     while (currentTime < endDate && slots.length < 3) {
       // Check each doctor
@@ -184,7 +203,7 @@ export class AvailabilityService {
           );
 
           if (!hasConflict) {
-            // Found an available slot! Add it and move to next time slot
+            // Found an available slot! Add it
             slots.push({
               doctor_id: doctor.id,
               doctor_name: doctor.name,
@@ -206,7 +225,8 @@ export class AvailabilityService {
         }
       }
 
-      currentTime = addMinutes(currentTime, increment);
+      // Move to next time slot using service duration increment
+      currentTime = addMinutes(currentTime, searchIncrement);
     }
 
     return {

@@ -6,12 +6,12 @@ interface AppState {
   selectedService: Service | null;
   selectedDate: Date;
   selectedSlot: TimeSlot | null;
-  tenantId: string;
+  tenantId: number;
   setSelectedDoctor: (doctor: Doctor | null) => void;
   setSelectedService: (service: Service | null) => void;
   setSelectedDate: (date: Date) => void;
   setSelectedSlot: (slot: TimeSlot | null) => void;
-  setTenantId: (tenantId: string) => void;
+  setTenantId: (tenantId: number) => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -19,7 +19,7 @@ export const useAppStore = create<AppState>((set) => ({
   selectedService: null,
   selectedDate: new Date(),
   selectedSlot: null,
-  tenantId: 'downtown-clinic',
+  tenantId: 1, // Downtown Clinic ID
   setSelectedDoctor: (doctor) => set({ selectedDoctor: doctor }),
   setSelectedService: (service) => set({ selectedService: service }),
   setSelectedDate: (date) => set({ selectedDate: date }),

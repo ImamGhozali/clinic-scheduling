@@ -64,7 +64,15 @@ export class AppointmentsService {
       });
       await manager.save(patient);
 
-      // 3. Find an available room (simplified - pick first available)
+      // 3. Get service to determine buffers and requirements
+      const service = await manager.findOne(Service, {
+        where: { id: dto.service_id, tenantId },
+      });
+      if (!service) {
+        throw new NotFoundException(`Service not found: ${dto.service_id}`);
+      }
+
+      // 4. Find an available room (simplified - pick first available)
       const room = await manager.findOne(Room, {
         where: { tenantId, isActive: true },
       });
@@ -72,13 +80,13 @@ export class AppointmentsService {
         throw new NotFoundException('No rooms available');
       }
 
-      // 4. Calculate appointment times
+      // 5. Calculate appointment times
       const startsAt = new Date(dto.starts_at);
       const endsAt = new Date(dto.ends_at);
 
-      // Time range including buffers for conflict detection (use default 5 min buffers)
-      const bufferBeforeMin = 5;
-      const bufferAfterMin = 5;
+      // Time range including buffers for conflict detection (from service)
+      const bufferBeforeMin = service.bufferBeforeMin;
+      const bufferAfterMin = service.bufferAfterMin;
       const bufferStartsAt = new Date(
         startsAt.getTime() - bufferBeforeMin * 60000,
       );
@@ -86,7 +94,7 @@ export class AppointmentsService {
         endsAt.getTime() + bufferAfterMin * 60000,
       );
 
-      // 5. Check for conflicts
+      // 6. Check for conflicts
       const conflicts = await this.detectConflicts(
         manager,
         tenantId,
@@ -101,7 +109,7 @@ export class AppointmentsService {
         throw new AppointmentConflictException(conflicts);
       }
 
-      // 6. Check breaks
+      // 7. Check breaks
       await this.checkBreaks(
         manager,
         tenantId,
@@ -112,11 +120,12 @@ export class AppointmentsService {
         bufferEndsAt,
       );
 
-      // 7. Create appointment
+      // 8. Create appointment
       const newAppointment = manager.create(Appointment, {
         tenantId,
         doctorId: dto.doctor_id,
         patientId: patient.id,
+        serviceId: dto.service_id,
         roomId: room.id,
         startsAt,
         endsAt,

@@ -7,7 +7,7 @@ import toast from 'react-hot-toast';
 import { Calendar, User, Mail, Phone, FileText, Clock } from 'lucide-react';
 
 export function BookingForm() {
-  const { selectedDoctor, selectedSlot } = useAppStore();
+  const { selectedService, selectedSlot } = useAppStore();
   const queryClient = useQueryClient();
 
   const [formData, setFormData] = useState({
@@ -40,8 +40,8 @@ export function BookingForm() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!selectedDoctor) {
-      toast.error('Please select a doctor');
+    if (!selectedService) {
+      toast.error('Please select a service');
       return;
     }
 
@@ -51,7 +51,8 @@ export function BookingForm() {
     }
 
     createAppointmentMutation.mutate({
-      doctor_id: selectedDoctor.id,
+      doctor_id: selectedSlot.doctor_id,
+      service_id: selectedService.id,
       patient_name: formData.patient_name,
       patient_email: formData.patient_email || undefined,
       patient_phone: formData.patient_phone || undefined,
@@ -61,7 +62,7 @@ export function BookingForm() {
     });
   };
 
-  if (!selectedDoctor) {
+  if (!selectedSlot) {
     return null;
   }
 
@@ -71,6 +72,22 @@ export function BookingForm() {
         <Calendar className="w-5 h-5" />
         Book Appointment
       </h2>
+
+      {/* Selected Appointment Details */}
+      <div className="mb-4 p-4 bg-primary-50 border border-primary-200 rounded-lg space-y-2">
+        <div className="flex items-center gap-2 text-sm">
+          <User className="w-4 h-4 text-primary-600" />
+          <span className="font-medium text-primary-900">Doctor:</span>
+          <span className="text-primary-700">{selectedSlot.doctor_name}</span>
+        </div>
+        <div className="flex items-center gap-2 text-sm">
+          <Clock className="w-4 h-4 text-primary-600" />
+          <span className="font-medium text-primary-900">Time:</span>
+          <span className="text-primary-700">
+            {format(new Date(selectedSlot.start), 'PPpp')}
+          </span>
+        </div>
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Patient Name */}
@@ -123,21 +140,6 @@ export function BookingForm() {
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             placeholder="+1 (555) 123-4567"
           />
-        </div>
-
-        {/* Selected Time Display */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
-            <Clock className="w-4 h-4" />
-            Select Time *
-          </label>
-          <div className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700">
-            {selectedSlot ? (
-              format(new Date(selectedSlot.start), 'PPpp')
-            ) : (
-              <span className="text-gray-400">Select a time slot from the calendar</span>
-            )}
-          </div>
         </div>
 
         {/* Notes */}

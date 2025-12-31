@@ -13,6 +13,15 @@ export class CreateAppointmentDto {
   doctor_id: number;
 
   @ApiProperty({
+    description: 'Service ID',
+    example: 501,
+  })
+  @IsInt()
+  @IsPositive()
+  @Type(() => Number)
+  service_id: number;
+
+  @ApiProperty({
     description: 'Patient name',
     example: 'John Doe',
   })
