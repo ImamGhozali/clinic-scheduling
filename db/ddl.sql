@@ -170,25 +170,45 @@ CREATE INDEX idx_breaks_tenant_resource_time ON breaks(tenant_id, resource_type,
 COMMENT ON TABLE breaks IS 'Scheduled breaks, holidays, and maintenance windows for any resource type';
 
 -- ============================================
--- 9. APPOINTMENTS TABLE (Core table)
+-- 9. APPOINTMENTS TABLE (Core table - PARTITIONED BY MONTH)
 -- ============================================
 CREATE TYPE appointment_status AS ENUM ('scheduled', 'cancelled', 'completed', 'no_show');
 
+-- Parent table (partitioned by starts_at month)
+-- Note: SERIAL doesn't work well with partitioning, so we use a sequence explicitly
+CREATE SEQUENCE appointments_id_seq;
+
 CREATE TABLE appointments (
-    id SERIAL PRIMARY KEY,
+    id INTEGER NOT NULL DEFAULT nextval('appointments_id_seq'),
     tenant_id INTEGER NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     doctor_id INTEGER NOT NULL REFERENCES doctors(id) ON DELETE CASCADE,
     patient_id INTEGER NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
     service_id INTEGER REFERENCES services(id),
     room_id INTEGER NOT NULL REFERENCES rooms(id),
-    starts_at TIMESTAMPTZ NOT NULL,  -- Stored in UTC
+    starts_at TIMESTAMPTZ NOT NULL,  -- Stored in UTC (partition key)
     ends_at TIMESTAMPTZ NOT NULL,     -- Stored in UTC
     status appointment_status DEFAULT 'scheduled',
     notes TEXT,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT appointments_time_check CHECK (ends_at > starts_at)
-);
+    CONSTRAINT appointments_time_check CHECK (ends_at > starts_at),
+    PRIMARY KEY (id, starts_at)  -- Composite PK required for partitioning
+) PARTITION BY RANGE (starts_at);
+
+-- Create initial partitions: Current month + 2 months ahead
+-- In production, use create_future_partitions() function to add more as needed
+
+-- December 2025 (current month)
+CREATE TABLE appointments_2025_12 PARTITION OF appointments
+    FOR VALUES FROM ('2025-12-01 00:00:00+00') TO ('2026-01-01 00:00:00+00');
+
+-- January 2026 (1 month ahead)
+CREATE TABLE appointments_2026_01 PARTITION OF appointments
+    FOR VALUES FROM ('2026-01-01 00:00:00+00') TO ('2026-02-01 00:00:00+00');
+
+-- February 2026 (2 months ahead)
+CREATE TABLE appointments_2026_02 PARTITION OF appointments
+    FOR VALUES FROM ('2026-02-01 00:00:00+00') TO ('2026-03-01 00:00:00+00');
 
 -- ============================================
 -- 10. CRITICAL INDEXES FOR PERFORMANCE
@@ -237,8 +257,10 @@ CREATE INDEX idx_service_devices_device ON service_devices(device_id);
 COMMENT ON TABLE service_devices IS 'Many-to-many: Services that require specific devices';
 
 -- Appointment-Device relationships (which devices an appointment uses)
+-- Note: Cannot add FK to appointments(id) due to partitioning with composite PK
+-- Application layer ensures referential integrity
 CREATE TABLE appointment_devices (
-    appointment_id INTEGER NOT NULL REFERENCES appointments(id) ON DELETE CASCADE,
+    appointment_id INTEGER NOT NULL,
     device_id INTEGER NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
     PRIMARY KEY (appointment_id, device_id)
 );
@@ -265,12 +287,29 @@ COMMENT ON TABLE doctor_services IS 'Many-to-many: Services that each doctor is 
 -- ============================================
 -- Database-level guard to prevent double-booking at the database level
 -- This enforces concurrency safety even with concurrent requests
-ALTER TABLE appointments 
-ADD CONSTRAINT no_overlapping_doctor_appointments 
-EXCLUDE USING gist (
-    doctor_id WITH =,
-    tstzrange(starts_at, ends_at) WITH &&
-) WHERE (status = 'scheduled');
+-- Note: With partitioning, exclusion constraints must be added to each partition
+-- We'll create a template for this that gets applied to each partition
+
+-- Function to add exclusion constraint to a partition
+CREATE OR REPLACE FUNCTION add_appointment_exclusion_constraint(partition_name TEXT)
+RETURNS VOID AS $$
+BEGIN
+    EXECUTE format(
+        'ALTER TABLE %I ADD CONSTRAINT %I 
+         EXCLUDE USING gist (
+             doctor_id WITH =,
+             tstzrange(starts_at, ends_at) WITH &&
+         ) WHERE (status = ''scheduled'')',
+        partition_name,
+        partition_name || '_no_overlap'
+    );
+END;
+$$ LANGUAGE plpgsql;
+
+-- Apply exclusion constraint to all existing partitions
+SELECT add_appointment_exclusion_constraint('appointments_2025_12');
+SELECT add_appointment_exclusion_constraint('appointments_2026_01');
+SELECT add_appointment_exclusion_constraint('appointments_2026_02');
 
 -- Note: Room and device conflicts are handled at application level
 -- due to complexity of many-to-many relationships
@@ -310,6 +349,163 @@ CREATE TRIGGER update_devices_updated_at BEFORE UPDATE ON devices
 CREATE TRIGGER update_appointments_updated_at BEFORE UPDATE ON appointments
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+
+-- ============================================
+-- 14. PARTITION MANAGEMENT FUNCTIONS
+-- ============================================
+-- 
+-- These functions help manage partitions over time:
+-- - Create new partitions as needed
+-- - List existing partitions
+-- - Archive or drop old partitions
+-- ============================================
+
+-- Function: Create a single partition for a given month
+CREATE OR REPLACE FUNCTION create_appointments_partition(
+    partition_date DATE
+)
+RETURNS TEXT AS $$
+DECLARE
+    partition_name TEXT;
+    start_date TIMESTAMPTZ;
+    end_date TIMESTAMPTZ;
+    result TEXT;
+BEGIN
+    -- Generate partition name (e.g., appointments_2025_01)
+    partition_name := 'appointments_' || to_char(partition_date, 'YYYY_MM');
+    
+    -- Calculate partition boundaries
+    start_date := date_trunc('month', partition_date AT TIME ZONE 'UTC');
+    end_date := date_trunc('month', partition_date + INTERVAL '1 month') AT TIME ZONE 'UTC';
+    
+    -- Check if partition already exists
+    IF EXISTS (
+        SELECT 1 FROM pg_class c
+        JOIN pg_namespace n ON n.oid = c.relnamespace
+        WHERE c.relname = partition_name AND n.nspname = 'public'
+    ) THEN
+        RETURN 'Partition ' || partition_name || ' already exists';
+    END IF;
+    
+    -- Create the partition
+    EXECUTE format(
+        'CREATE TABLE %I PARTITION OF appointments
+         FOR VALUES FROM (%L) TO (%L)',
+        partition_name, start_date, end_date
+    );
+    
+    -- Add exclusion constraint
+    PERFORM add_appointment_exclusion_constraint(partition_name);
+    
+    result := 'Created partition ' || partition_name;
+    RETURN result;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function: Create partitions for the next N months
+CREATE OR REPLACE FUNCTION create_future_partitions(
+    months_ahead INTEGER DEFAULT 6
+)
+RETURNS TABLE(partition_info TEXT) AS $$
+DECLARE
+    i INTEGER;
+    target_date DATE;
+BEGIN
+    FOR i IN 0..months_ahead-1 LOOP
+        target_date := date_trunc('month', CURRENT_DATE + (i || ' months')::INTERVAL)::DATE;
+        RETURN QUERY SELECT create_appointments_partition(target_date);
+    END LOOP;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function: List all appointment partitions
+CREATE OR REPLACE FUNCTION list_appointment_partitions()
+RETURNS TABLE(
+    partition_name TEXT,
+    partition_range TEXT,
+    row_count BIGINT
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        c.relname::TEXT,
+        pg_get_expr(c.relpartbound, c.oid, true)::TEXT,
+        COALESCE(
+            (SELECT n_live_tup FROM pg_stat_user_tables WHERE relname = c.relname),
+            0
+        )
+    FROM pg_class c
+    JOIN pg_inherits i ON i.inhrelid = c.oid
+    JOIN pg_class p ON p.oid = i.inhparent
+    WHERE p.relname = 'appointments' AND c.relkind = 'r'
+    ORDER BY c.relname;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function: Drop old partitions (for archiving)
+CREATE OR REPLACE FUNCTION drop_old_partitions(
+    months_to_keep INTEGER DEFAULT 24
+)
+RETURNS TABLE(dropped_partition TEXT) AS $$
+DECLARE
+    partition_rec RECORD;
+    cutoff_date DATE;
+    partition_year INTEGER;
+    partition_month INTEGER;
+    partition_date DATE;
+BEGIN
+    cutoff_date := date_trunc('month', CURRENT_DATE - (months_to_keep || ' months')::INTERVAL)::DATE;
+    
+    FOR partition_rec IN
+        SELECT c.relname
+        FROM pg_class c
+        JOIN pg_inherits i ON i.inhrelid = c.oid
+        JOIN pg_class p ON p.oid = i.inhparent
+        WHERE p.relname = 'appointments'
+        AND c.relkind = 'r'
+        AND c.relname ~ '^appointments_\d{4}_\d{2}$'
+    LOOP
+        -- Extract year and month from partition name
+        partition_year := substring(partition_rec.relname from 'appointments_(\d{4})_\d{2}')::INTEGER;
+        partition_month := substring(partition_rec.relname from 'appointments_\d{4}_(\d{2})')::INTEGER;
+        partition_date := make_date(partition_year, partition_month, 1);
+        
+        IF partition_date < cutoff_date THEN
+            EXECUTE format('DROP TABLE %I', partition_rec.relname);
+            dropped_partition := partition_rec.relname || ' (date: ' || partition_date || ')';
+            RETURN NEXT;
+        END IF;
+    END LOOP;
+END;
+$$ LANGUAGE plpgsql;
+
+COMMENT ON FUNCTION create_appointments_partition IS 
+'Creates a single partition for a given month. Usage: SELECT create_appointments_partition(''2027-01-01''::DATE);';
+
+COMMENT ON FUNCTION create_future_partitions IS 
+'Creates partitions for the next N months. Usage: SELECT create_future_partitions(12);';
+
+COMMENT ON FUNCTION list_appointment_partitions IS 
+'Lists all partitions with row counts. Usage: SELECT * FROM list_appointment_partitions();';
+
+COMMENT ON FUNCTION drop_old_partitions IS 
+'Drops partitions older than N months. Usage: SELECT * FROM drop_old_partitions(24);';
+
+-- ============================================
+-- PARTITION MANAGEMENT USAGE EXAMPLES
+-- ============================================
+-- 
+-- Monthly maintenance (recommended to automate):
+--   SELECT create_future_partitions(6);
+-- 
+-- View all partitions:
+--   SELECT * FROM list_appointment_partitions();
+-- 
+-- Archive old data (use with caution):
+--   SELECT * FROM drop_old_partitions(24);
+-- 
+-- ============================================
+
 -- ============================================
 -- SCHEMA CREATION COMPLETE
 -- ============================================
@@ -324,7 +520,15 @@ CREATE TRIGGER update_appointments_updated_at BEFORE UPDATE ON appointments
 -- Scale Considerations (50k bookings/day):
 -- - Indexes support sub-300ms availability search
 -- - Exclusion constraints handle concurrent booking attempts
--- - Partitioning by month/tenant can be added if needed
+-- - Monthly partitioning implemented for appointments table
 -- - Integer IDs provide better index performance and lower storage overhead
+-- 
+-- Partitioning Strategy:
+-- - Appointments table partitioned by month (starts_at)
+-- - Initial setup: 3 partitions (Dec 2025, Jan 2026, Feb 2026)
+-- - Use create_future_partitions() function to add more as needed
+-- - Queries for specific date ranges only scan relevant partitions
+-- - Old partitions can be dropped/archived easily
+-- - Each partition has its own exclusion constraint for conflict detection
 -- ============================================
 
