@@ -15,14 +15,13 @@
 -- ============================================
 
 -- Enable required extensions
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "btree_gist";  -- Required for exclusion constraints
 
 -- ============================================
 -- 1. TENANTS TABLE (Multi-tenant root)
 -- ============================================
 CREATE TABLE tenants (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     slug VARCHAR(100) UNIQUE NOT NULL,  -- Used for X-Tenant-Id header authentication
     timezone VARCHAR(50) NOT NULL DEFAULT 'Europe/Berlin',
@@ -40,8 +39,8 @@ COMMENT ON TABLE tenants IS 'Multi-tenant clinics - root of tenant isolation';
 -- 2. DOCTORS TABLE
 -- ============================================
 CREATE TABLE doctors (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    id SERIAL PRIMARY KEY,
+    tenant_id INTEGER NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255),
     specialty VARCHAR(100),
@@ -61,8 +60,8 @@ COMMENT ON TABLE doctors IS 'Doctors belonging to tenants with configurable slot
 -- 3. PATIENTS TABLE
 -- ============================================
 CREATE TABLE patients (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    id SERIAL PRIMARY KEY,
+    tenant_id INTEGER NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255),
     phone VARCHAR(50),
@@ -79,8 +78,8 @@ COMMENT ON TABLE patients IS 'Patient information for appointment booking';
 -- 4. SERVICES TABLE
 -- ============================================
 CREATE TABLE services (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    id SERIAL PRIMARY KEY,
+    tenant_id INTEGER NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
     description TEXT,
     duration_min INTEGER NOT NULL CHECK (duration_min > 0),
@@ -100,8 +99,8 @@ COMMENT ON TABLE services IS 'Medical services with duration and buffer requirem
 -- 5. ROOMS TABLE
 -- ============================================
 CREATE TABLE rooms (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    id SERIAL PRIMARY KEY,
+    tenant_id INTEGER NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     name VARCHAR(100) NOT NULL,
     location VARCHAR(100),
     is_active BOOLEAN DEFAULT TRUE,
@@ -117,8 +116,8 @@ COMMENT ON TABLE rooms IS 'Physical examination rooms - required for most appoin
 -- 6. DEVICES TABLE
 -- ============================================
 CREATE TABLE devices (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    id SERIAL PRIMARY KEY,
+    tenant_id INTEGER NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     name VARCHAR(100) NOT NULL,
     device_type VARCHAR(100) NOT NULL,
     is_active BOOLEAN DEFAULT TRUE,
@@ -134,9 +133,9 @@ COMMENT ON TABLE devices IS 'Medical devices/equipment that can be scheduled for
 -- 7. WORKING HOURS TABLE
 -- ============================================
 CREATE TABLE working_hours (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    doctor_id UUID NOT NULL REFERENCES doctors(id) ON DELETE CASCADE,
+    id SERIAL PRIMARY KEY,
+    tenant_id INTEGER NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    doctor_id INTEGER NOT NULL REFERENCES doctors(id) ON DELETE CASCADE,
     day_of_week INTEGER NOT NULL CHECK (day_of_week >= 0 AND day_of_week <= 6),  -- 0=Sunday, 6=Saturday
     start_time TIME NOT NULL,
     end_time TIME NOT NULL,
@@ -155,10 +154,10 @@ COMMENT ON TABLE working_hours IS 'Doctor availability by day of week - used for
 CREATE TYPE resource_type AS ENUM ('doctor', 'room', 'device');
 
 CREATE TABLE breaks (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    id SERIAL PRIMARY KEY,
+    tenant_id INTEGER NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     resource_type resource_type NOT NULL,
-    resource_id UUID NOT NULL,
+    resource_id INTEGER NOT NULL,
     starts_at TIMESTAMPTZ NOT NULL,
     ends_at TIMESTAMPTZ NOT NULL,
     reason VARCHAR(255),
@@ -176,12 +175,12 @@ COMMENT ON TABLE breaks IS 'Scheduled breaks, holidays, and maintenance windows 
 CREATE TYPE appointment_status AS ENUM ('scheduled', 'cancelled', 'completed', 'no_show');
 
 CREATE TABLE appointments (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    doctor_id UUID NOT NULL REFERENCES doctors(id) ON DELETE CASCADE,
-    patient_id UUID NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
-    service_id UUID REFERENCES services(id),
-    room_id UUID NOT NULL REFERENCES rooms(id),
+    id SERIAL PRIMARY KEY,
+    tenant_id INTEGER NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    doctor_id INTEGER NOT NULL REFERENCES doctors(id) ON DELETE CASCADE,
+    patient_id INTEGER NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
+    service_id INTEGER REFERENCES services(id),
+    room_id INTEGER NOT NULL REFERENCES rooms(id),
     starts_at TIMESTAMPTZ NOT NULL,  -- Stored in UTC
     ends_at TIMESTAMPTZ NOT NULL,     -- Stored in UTC
     status appointment_status DEFAULT 'scheduled',
@@ -227,8 +226,8 @@ COMMENT ON TABLE appointments IS 'Booked appointments with indexes optimized for
 
 -- Service-Device relationships (which devices a service requires)
 CREATE TABLE service_devices (
-    service_id UUID NOT NULL REFERENCES services(id) ON DELETE CASCADE,
-    device_id UUID NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
+    service_id INTEGER NOT NULL REFERENCES services(id) ON DELETE CASCADE,
+    device_id INTEGER NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
     PRIMARY KEY (service_id, device_id)
 );
 
@@ -239,8 +238,8 @@ COMMENT ON TABLE service_devices IS 'Many-to-many: Services that require specifi
 
 -- Appointment-Device relationships (which devices an appointment uses)
 CREATE TABLE appointment_devices (
-    appointment_id UUID NOT NULL REFERENCES appointments(id) ON DELETE CASCADE,
-    device_id UUID NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
+    appointment_id INTEGER NOT NULL REFERENCES appointments(id) ON DELETE CASCADE,
+    device_id INTEGER NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
     PRIMARY KEY (appointment_id, device_id)
 );
 
@@ -251,8 +250,8 @@ COMMENT ON TABLE appointment_devices IS 'Many-to-many: Devices used by appointme
 
 -- Doctor-Service relationships (which doctors can perform which services)
 CREATE TABLE doctor_services (
-    doctor_id UUID NOT NULL REFERENCES doctors(id) ON DELETE CASCADE,
-    service_id UUID NOT NULL REFERENCES services(id) ON DELETE CASCADE,
+    doctor_id INTEGER NOT NULL REFERENCES doctors(id) ON DELETE CASCADE,
+    service_id INTEGER NOT NULL REFERENCES services(id) ON DELETE CASCADE,
     PRIMARY KEY (doctor_id, service_id)
 );
 
@@ -320,10 +319,12 @@ CREATE TRIGGER update_appointments_updated_at BEFORE UPDATE ON appointments
 -- - Composite indexes on (tenant_id, resource_id, time) for conflict detection
 -- - Exclusion constraint on appointments prevents database-level double-booking
 -- - Indexes use WHERE clauses to reduce size (only active/scheduled records)
+-- - SERIAL primary keys for simplicity and performance (4 bytes vs 16 bytes for UUID)
 -- 
 -- Scale Considerations (50k bookings/day):
 -- - Indexes support sub-300ms availability search
 -- - Exclusion constraints handle concurrent booking attempts
 -- - Partitioning by month/tenant can be added if needed
+-- - Integer IDs provide better index performance and lower storage overhead
 -- ============================================
 

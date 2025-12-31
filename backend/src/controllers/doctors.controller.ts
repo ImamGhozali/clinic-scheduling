@@ -43,7 +43,7 @@ export class DoctorsController {
     @GetTenant() tenant: Tenant,
     @Query('service_id') serviceId?: string,
   ) {
-    return await this.doctorsService.getDoctors(tenant.id, serviceId);
+    return await this.doctorsService.getDoctors(tenant.id, serviceId ? parseInt(serviceId, 10) : undefined);
   }
 
   @Get(':id')
@@ -65,7 +65,7 @@ export class DoctorsController {
     description: 'Doctor not found',
   })
   async getDoctor(@GetTenant() tenant: Tenant, @Param('id') doctorId: string) {
-    return await this.doctorsService.getDoctor(tenant.id, doctorId);
+    return await this.doctorsService.getDoctor(tenant.id, parseInt(doctorId, 10));
   }
 
   @Get(':id/schedule')
@@ -94,7 +94,7 @@ export class DoctorsController {
   ) {
     return await this.appointmentsService.getDoctorSchedule(
       tenant.id,
-      doctorId,
+      parseInt(doctorId, 10),
       query.from,
       query.to,
     );

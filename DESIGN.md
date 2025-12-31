@@ -85,6 +85,38 @@ appointments → patients, rooms, devices
 
 **Trade-off**: No foreign key validation on `resource_id` (polymorphic), but acceptable given simplicity.
 
+#### 5. **Primary Keys: Integer IDs vs UUIDs**
+
+**Decision**: Use `SERIAL` (auto-incrementing integers) for all primary keys.
+
+**Rationale**:
+- **Matches assessment specification**: The technical assessment examples use integer IDs (`doctor_id: 101`, `X-Tenant-Id: 42`)
+- **Simpler implementation**: Easier to work with in URLs, logs, and debugging
+- **Better performance**: 4 bytes vs 16 bytes for UUID → smaller indexes, faster lookups
+- **Human-readable**: IDs like `101`, `201` are easier to remember than UUIDs during development
+- **Assessment timebox**: Fits the 6-10 hour implementation window better
+
+**Trade-offs**:
+- **Less secure**: Sequential IDs are predictable (can enumerate resources)
+- **No distributed generation**: Must hit database to get next ID
+- **Information leakage**: ID sequences reveal business metrics (e.g., "appointment #50,000")
+
+**Mitigation**:
+- **Tenant isolation enforced server-side**: `TenantGuard` prevents cross-tenant access
+- **Authorization layer**: In production, add proper auth (JWT, API keys) on top of tenant isolation
+- **Slug-based tenant lookup**: Support both integer ID and slug in `X-Tenant-Id` header for flexibility
+
+**ID Ranges** (for seed data organization):
+- Tenants: 1-99
+- Doctors: 100-199
+- Patients: 200-299
+- Rooms: 300-399
+- Devices: 400-499
+- Services: 500-599
+- Appointments: 1000+
+
+**Note**: This is an intentional alignment with the assessment specification. For a production multi-tenant SaaS system, UUIDs or prefixed IDs (like Stripe's `cus_xxx`, `pm_xxx`) would be more appropriate for security and scalability.
+
 ---
 
 ## 3. Conflict Detection Strategy

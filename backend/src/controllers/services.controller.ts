@@ -50,7 +50,7 @@ export class ServicesController {
     description: 'Service not found',
   })
   async getService(@GetTenant() tenant: Tenant, @Param('id') id: string) {
-    const service = await this.servicesService.getService(tenant.id, id);
+    const service = await this.servicesService.getService(tenant.id, parseInt(id, 10));
     if (!service) {
       throw new NotFoundException('Service not found');
     }

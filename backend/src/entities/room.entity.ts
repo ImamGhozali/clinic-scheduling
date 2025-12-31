@@ -13,12 +13,12 @@ import { Tenant } from './tenant.entity';
 @Entity('rooms')
 @Index(['tenantId', 'isActive'])
 export class Room {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn()
+  id: number;
 
-  @Column({ name: 'tenant_id', type: 'uuid' })
+  @Column({ name: 'tenant_id', type: 'int' })
   @Index()
-  tenantId: string;
+  tenantId: number;
 
   @ManyToOne(() => Tenant)
   @JoinColumn({ name: 'tenant_id' })

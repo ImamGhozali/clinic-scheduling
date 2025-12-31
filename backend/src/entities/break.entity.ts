@@ -18,12 +18,12 @@ export enum ResourceType {
 @Entity('breaks')
 @Index(['tenantId', 'resourceType', 'resourceId', 'startsAt'])
 export class Break {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn()
+  id: number;
 
-  @Column({ name: 'tenant_id', type: 'uuid' })
+  @Column({ name: 'tenant_id', type: 'int' })
   @Index()
-  tenantId: string;
+  tenantId: number;
 
   @ManyToOne(() => Tenant)
   @JoinColumn({ name: 'tenant_id' })
@@ -36,8 +36,8 @@ export class Break {
   })
   resourceType: ResourceType;
 
-  @Column({ name: 'resource_id', type: 'uuid' })
-  resourceId: string;
+  @Column({ name: 'resource_id', type: 'int' })
+  resourceId: number;
 
   @Column({ name: 'starts_at', type: 'timestamptz' })
   startsAt: Date;

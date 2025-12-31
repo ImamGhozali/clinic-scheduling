@@ -1,14 +1,16 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsUUID, IsISO8601, IsOptional, IsString } from 'class-validator';
-import { Transform } from 'class-transformer';
+import { IsInt, IsISO8601, IsOptional, IsString, IsPositive } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
 
 export class AvailabilityQueryDto {
   @ApiProperty({
     description: 'Service ID to search availability for',
-    example: '550e8400-e29b-41d4-a716-446655440002',
+    example: 501,
   })
-  @IsUUID()
-  service_id: string;
+  @IsInt()
+  @IsPositive()
+  @Type(() => Number)
+  service_id: number;
 
   @ApiProperty({
     description: 'Start of search range in ISO 8601 format',
@@ -26,11 +28,11 @@ export class AvailabilityQueryDto {
 
   @ApiPropertyOptional({
     description: 'Comma-separated list of doctor IDs to search (optional)',
-    example: '550e8400-e29b-41d4-a716-446655440000,550e8400-e29b-41d4-a716-446655440001',
+    example: '101,102,103',
   })
   @IsOptional()
   @IsString()
-  @Transform(({ value }) => value) // Keep as string for now
+  @Transform(({ value }) => value) // Keep as string, will be parsed in service
   doctor_ids?: string;
 }
 

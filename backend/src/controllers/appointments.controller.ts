@@ -101,7 +101,7 @@ export class AppointmentsController {
     @GetTenant() tenant: Tenant,
     @Param('id') id: string,
   ) {
-    return await this.appointmentsService.cancelAppointment(tenant.id, id);
+    return await this.appointmentsService.cancelAppointment(tenant.id, parseInt(id, 10));
   }
 
   @Get(':id')
@@ -126,7 +126,7 @@ export class AppointmentsController {
     @GetTenant() tenant: Tenant,
     @Param('id') id: string,
   ) {
-    return await this.appointmentsService.getAppointment(tenant.id, id);
+    return await this.appointmentsService.getAppointment(tenant.id, parseInt(id, 10));
   }
 
   @Get()
@@ -175,8 +175,8 @@ export class AppointmentsController {
     @Query('to') to?: string,
   ) {
     return await this.appointmentsService.listAppointments(tenant.id, {
-      doctorId,
-      patientId,
+      doctorId: doctorId ? parseInt(doctorId, 10) : undefined,
+      patientId: patientId ? parseInt(patientId, 10) : undefined,
       status,
       from,
       to,
