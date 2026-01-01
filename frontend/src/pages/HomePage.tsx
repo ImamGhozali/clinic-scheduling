@@ -31,11 +31,11 @@ export function HomePage() {
               <label className="text-sm font-medium text-gray-700">Clinic:</label>
               <select
                 value={tenantId}
-                onChange={(e) => setTenantId(e.target.value)}
+                onChange={(e) => setTenantId(Number(e.target.value))}
                 className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               >
-                <option value="downtown-clinic">Downtown Clinic</option>
-                <option value="westside-medical">Westside Medical</option>
+                <option value={1}>Downtown Clinic</option>
+                <option value={2}>Westside Medical</option>
               </select>
             </div>
           </div>

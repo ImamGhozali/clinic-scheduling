@@ -109,10 +109,21 @@ class ApiService {
   // Appointments
   // ============================================
 
-  async createAppointment(data: CreateAppointmentRequest): Promise<Appointment> {
+  async createAppointment(
+    data: CreateAppointmentRequest,
+    idempotencyKey?: string
+  ): Promise<Appointment> {
+    const headers: Record<string, string> = {};
+    
+    // Add idempotency key if provided
+    if (idempotencyKey) {
+      headers['Idempotency-Key'] = idempotencyKey;
+    }
+    
     const response = await this.api.post<Appointment>(
       '/api/appointments',
-      data
+      data,
+      { headers }
     );
     return response.data;
   }

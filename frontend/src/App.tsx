@@ -17,11 +17,18 @@ const queryClient = new QueryClient({
 
 function App() {
   const tenantId = useAppStore((state) => state.tenantId);
+  const setSelectedService = useAppStore((state) => state.setSelectedService);
+  const setSelectedDoctor = useAppStore((state) => state.setSelectedDoctor);
+  const setSelectedSlot = useAppStore((state) => state.setSelectedSlot);
 
-  // Update API service when tenant changes
+  // Update API service when tenant changes and reset selections
   useEffect(() => {
     apiService.setTenant(tenantId);
-  }, [tenantId]);
+    // Reset selections when tenant changes
+    setSelectedService(null);
+    setSelectedDoctor(null);
+    setSelectedSlot(null);
+  }, [tenantId, setSelectedService, setSelectedDoctor, setSelectedSlot]);
 
   return (
     <QueryClientProvider client={queryClient}>

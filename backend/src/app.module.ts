@@ -12,6 +12,8 @@ import {
   Appointment,
   WorkingHours,
   Break,
+  RecurringBreak,
+  IdempotencyKey,
 } from './entities';
 import { AppointmentsController } from './controllers/appointments.controller';
 import { AvailabilityController } from './controllers/availability.controller';
@@ -24,6 +26,8 @@ import { DoctorsService } from './services/doctors.service';
 import { ServicesService } from './services/services.service';
 import { PartitionMaintenanceService } from './services/partition-maintenance.service';
 import { TenantGuard } from './guards/tenant.guard';
+import { IdempotencyInterceptor } from './interceptors/idempotency.interceptor';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 
 @Module({
   imports: [
@@ -55,6 +59,8 @@ import { TenantGuard } from './guards/tenant.guard';
         Appointment,
         WorkingHours,
         Break,
+        RecurringBreak,
+        IdempotencyKey,
       ],
       synchronize: false, // Use migrations in production
       // SSL configuration for Neon (required for secure connections)
@@ -75,6 +81,8 @@ import { TenantGuard } from './guards/tenant.guard';
       Appointment,
       WorkingHours,
       Break,
+      RecurringBreak,
+      IdempotencyKey,
     ]),
   ],
   controllers: [
@@ -91,6 +99,10 @@ import { TenantGuard } from './guards/tenant.guard';
     ServicesService,
     PartitionMaintenanceService,
     TenantGuard,
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: IdempotencyInterceptor,
+    },
   ],
 })
 export class AppModule {}

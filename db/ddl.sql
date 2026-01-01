@@ -167,10 +167,70 @@ CREATE TABLE breaks (
 
 CREATE INDEX idx_breaks_tenant_resource_time ON breaks(tenant_id, resource_type, resource_id, starts_at);
 
-COMMENT ON TABLE breaks IS 'Scheduled breaks, holidays, and maintenance windows for any resource type';
+COMMENT ON TABLE breaks IS 'One-time breaks, holidays, and maintenance windows for any resource type';
 
 -- ============================================
--- 9. APPOINTMENTS TABLE (Core table - PARTITIONED BY MONTH)
+-- 8.5. RECURRING BREAKS TABLE
+-- ============================================
+CREATE TABLE recurring_breaks (
+    id SERIAL PRIMARY KEY,
+    tenant_id INTEGER NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    resource_type resource_type NOT NULL,
+    resource_id INTEGER NOT NULL,
+    day_of_week INTEGER CHECK (day_of_week IS NULL OR (day_of_week >= 0 AND day_of_week <= 6)),
+    start_time TIME NOT NULL,
+    end_time TIME NOT NULL,
+    reason VARCHAR(255),
+    is_active BOOLEAN DEFAULT TRUE,
+    effective_from DATE DEFAULT CURRENT_DATE,
+    effective_until DATE,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT recurring_breaks_time_check CHECK (end_time > start_time)
+);
+
+-- Indexes for performance
+CREATE INDEX idx_recurring_breaks_tenant_resource 
+    ON recurring_breaks(tenant_id, resource_type, resource_id)
+    WHERE is_active = true;
+
+CREATE INDEX idx_recurring_breaks_tenant_day 
+    ON recurring_breaks(tenant_id, day_of_week)
+    WHERE is_active = true;
+
+COMMENT ON TABLE recurring_breaks IS 
+'Recurring break patterns (daily/weekly) for doctors, rooms, and devices. Complements the breaks table for one-time events.';
+
+COMMENT ON COLUMN recurring_breaks.day_of_week IS 
+'NULL for daily breaks (applies every day), 0-6 for weekly breaks (0=Sunday, 1=Monday, ..., 6=Saturday)';
+
+-- ============================================
+-- 9. IDEMPOTENCY KEYS TABLE
+-- ============================================
+CREATE TABLE idempotency_keys (
+    id SERIAL PRIMARY KEY,
+    tenant_id INTEGER NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    idempotency_key VARCHAR(255) NOT NULL,
+    request_path VARCHAR(255) NOT NULL,
+    request_method VARCHAR(10) NOT NULL,
+    response_status INTEGER,
+    response_body JSONB,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMPTZ DEFAULT (CURRENT_TIMESTAMP + INTERVAL '24 hours'),
+    CONSTRAINT idempotency_keys_unique UNIQUE (tenant_id, idempotency_key)
+);
+
+-- Index for fast lookup and automatic cleanup of expired keys
+CREATE INDEX idx_idempotency_keys_tenant_key ON idempotency_keys(tenant_id, idempotency_key);
+CREATE INDEX idx_idempotency_keys_expires_at ON idempotency_keys(expires_at);
+
+COMMENT ON TABLE idempotency_keys IS 
+'Stores idempotency keys to prevent duplicate requests. Keys expire after 24 hours.';
+
+COMMENT ON COLUMN idempotency_keys.idempotency_key IS 
+'Client-provided unique key (e.g., UUID) sent via Idempotency-Key header';
+
+-- ============================================
+-- 10. APPOINTMENTS TABLE (Core table - PARTITIONED BY MONTH)
 -- ============================================
 CREATE TYPE appointment_status AS ENUM ('scheduled', 'cancelled', 'completed', 'no_show');
 
@@ -213,6 +273,12 @@ CREATE TABLE appointments_2026_02 PARTITION OF appointments
 -- ============================================
 -- 10. CRITICAL INDEXES FOR PERFORMANCE
 -- ============================================
+-- These indexes are optimized for:
+-- 1. Availability search (<300ms target on local DB)
+-- 2. Conflict detection (doctor, room, device)
+-- 3. Multi-tenant isolation
+-- 4. 50k bookings/day scale
+-- ============================================
 
 -- PRIMARY INDEX: Doctor conflict detection (most critical for 50k bookings/day)
 CREATE INDEX idx_appointments_tenant_doctor_time 
@@ -224,10 +290,11 @@ CREATE INDEX idx_appointments_tenant_room_time
     ON appointments(tenant_id, room_id, starts_at)
     WHERE status = 'scheduled';
 
--- Availability search optimization
-CREATE INDEX idx_appointments_tenant_time 
-    ON appointments(tenant_id, starts_at, ends_at)
-    WHERE status = 'scheduled';
+-- Availability search optimization - composite index with status for range queries
+-- This replaces the simpler idx_appointments_tenant_time with better filtering
+CREATE INDEX idx_appointments_tenant_status_time 
+    ON appointments(tenant_id, status, starts_at, ends_at)
+    WHERE status IN ('scheduled', 'completed');
 
 -- Calendar view: Get doctor's schedule for date range
 CREATE INDEX idx_appointments_doctor_calendar 
@@ -237,6 +304,24 @@ CREATE INDEX idx_appointments_doctor_calendar
 -- Tenant-scoped queries
 CREATE INDEX idx_appointments_tenant_created 
     ON appointments(tenant_id, created_at DESC);
+
+-- Working hours with availability filter (CRITICAL for availability search)
+-- This partial index dramatically speeds up working hours lookups
+CREATE INDEX idx_working_hours_tenant_doctor_day_available 
+    ON working_hours(tenant_id, doctor_id, day_of_week, is_available)
+    WHERE is_available = true;
+
+-- Breaks time range optimization - adds ends_at for better overlap detection
+CREATE INDEX idx_breaks_tenant_time_range 
+    ON breaks(tenant_id, starts_at, ends_at);
+
+-- Device conflict detection optimization - reverse lookup for faster checks
+CREATE INDEX idx_appointment_devices_device_appointment 
+    ON appointment_devices(device_id, appointment_id);
+
+-- Doctor-service lookup optimization - composite index for availability search
+CREATE INDEX idx_doctor_services_service_doctor 
+    ON doctor_services(service_id, doctor_id);
 
 COMMENT ON TABLE appointments IS 'Booked appointments with indexes optimized for conflict detection and availability search';
 
@@ -514,14 +599,19 @@ COMMENT ON FUNCTION drop_old_partitions IS
 -- - All tenant_id columns indexed for multi-tenant isolation
 -- - Composite indexes on (tenant_id, resource_id, time) for conflict detection
 -- - Exclusion constraint on appointments prevents database-level double-booking
--- - Indexes use WHERE clauses to reduce size (only active/scheduled records)
+-- - Partial indexes with WHERE clauses reduce size (only active/scheduled records)
 -- - SERIAL primary keys for simplicity and performance (4 bytes vs 16 bytes for UUID)
+-- - Working hours index includes is_available for faster filtering
+-- - Appointments index includes status for optimized range queries
+-- - Device and doctor-service indexes optimized for availability search
 -- 
 -- Scale Considerations (50k bookings/day):
--- - Indexes support sub-300ms availability search
+-- - Optimized indexes support <300ms availability search (local DB)
+-- - Parallel query execution in application layer
 -- - Exclusion constraints handle concurrent booking attempts
 -- - Monthly partitioning implemented for appointments table
 -- - Integer IDs provide better index performance and lower storage overhead
+-- - Pre-indexed conflict detection for O(1) resource lookups
 -- 
 -- Partitioning Strategy:
 -- - Appointments table partitioned by month (starts_at)

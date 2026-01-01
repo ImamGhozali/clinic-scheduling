@@ -10,17 +10,35 @@ export class ServicesService {
     private serviceRepository: Repository<Service>,
   ) {}
 
-  async getServices(tenantId: number): Promise<Service[]> {
-    return await this.serviceRepository.find({
+  private transformService(service: Service) {
+    return {
+      id: service.id,
+      tenant_id: service.tenantId,
+      name: service.name,
+      description: service.description,
+      duration_min: service.durationMin,
+      buffer_before_min: service.bufferBeforeMin,
+      buffer_after_min: service.bufferAfterMin,
+      requires_room: service.requiresRoom,
+      requires_device: service.requiresDevice,
+      created_at: service.createdAt,
+      updated_at: service.updatedAt,
+    };
+  }
+
+  async getServices(tenantId: number) {
+    const services = await this.serviceRepository.find({
       where: { tenantId },
       order: { name: 'ASC' },
     });
+    return services.map(s => this.transformService(s));
   }
 
-  async getService(tenantId: number, id: number): Promise<Service | null> {
-    return await this.serviceRepository.findOne({
+  async getService(tenantId: number, id: number) {
+    const service = await this.serviceRepository.findOne({
       where: { id, tenantId },
     });
+    return service ? this.transformService(service) : null;
   }
 }
 

@@ -4,10 +4,10 @@ import { useAppStore } from '../store/appStore';
 import { Stethoscope } from 'lucide-react';
 
 export function ServiceSelector() {
-  const { selectedService, setSelectedService } = useAppStore();
+  const { selectedService, setSelectedService, tenantId } = useAppStore();
 
   const { data: services, isLoading } = useQuery({
-    queryKey: ['services'],
+    queryKey: ['services', tenantId],
     queryFn: () => apiService.getServices(),
   });
 

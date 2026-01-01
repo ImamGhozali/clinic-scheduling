@@ -59,6 +59,13 @@ export class AvailabilityController {
           },
         ],
         limit: 3,
+        service: {
+          id: 501,
+          name: 'General Consultation',
+          duration_min: 30,
+          buffer_before_min: 5,
+          buffer_after_min: 10,
+        },
       },
     },
   })

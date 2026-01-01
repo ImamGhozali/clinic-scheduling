@@ -20,14 +20,18 @@ A production-ready appointment scheduling system with multi-tenant architecture,
 ### Core Features
 - ✅ **Multi-tenant architecture** - Complete data isolation per clinic
 - ✅ **Conflict-free booking** - Database-level prevention of double-booking
-- ✅ **Real-time availability** - Fast availability search (<300ms)
+- ✅ **Real-time availability** - Fast availability search (<300ms response time)
+- ✅ **Smart scheduling** - Auto-calculates appointment end times from service duration
+- ✅ **Idempotent requests** - Optional Idempotency-Key header prevents duplicate bookings
+- ✅ **Recurring breaks** - Support for daily/weekly break patterns (lunch, meetings)
 - ✅ **Doctor schedules** - Flexible weekly availability patterns
 - ✅ **Calendar view** - Visual appointment management
 - ✅ **RESTful API** - OpenAPI/Swagger documented endpoints
 
 ### Technical Features
 - ✅ **TypeScript** - Full type safety on frontend and backend
-- ✅ **PostgreSQL** - Optimized with strategic indexes and exclusion constraints
+- ✅ **PostgreSQL** - Optimized with strategic indexes, exclusion constraints, and partitioning
+- ✅ **Performance Optimized** - Parallel data loading, in-memory indexing, O(1) conflict detection
 - ✅ **Docker** - Complete containerized development environment
 - ✅ **Modern UI** - React with Tailwind CSS
 - ✅ **State Management** - Zustand + React Query
@@ -38,9 +42,9 @@ A production-ready appointment scheduling system with multi-tenant architecture,
 ### Backend
 - **Runtime**: Node.js 20
 - **Language**: TypeScript 5.3
-- **Framework**: Express 4
+- **Framework**: NestJS 10
 - **Database**: PostgreSQL 16
-- **Validation**: express-validator
+- **Validation**: class-validator
 - **Documentation**: Swagger/OpenAPI 3.0
 
 ### Frontend
@@ -86,7 +90,7 @@ docker-compose down
 Services will be available at:
 - **Frontend**: http://localhost:5173
 - **Backend API**: http://localhost:3000
-- **API Docs**: http://localhost:3000/api-docs
+- **API Docs**: http://localhost:3000/docs
 - **PostgreSQL**: localhost:5432
 
 ### Manual Setup (Without Docker)
@@ -97,8 +101,11 @@ Services will be available at:
 # Create database
 createdb clinic_scheduling
 
-# Run migrations
-psql -d clinic_scheduling -f database/migrations/001_initial_schema.sql
+# Run DDL to create schema
+psql -d clinic_scheduling -f db/ddl.sql
+
+# Seed with test data (optional)
+psql -d clinic_scheduling -f db/seed.sql
 ```
 
 #### 2. Backend Setup
@@ -146,7 +153,7 @@ npm run preview
 
 ### Interactive Documentation
 
-Visit http://localhost:3000/api-docs for full Swagger UI documentation.
+Visit http://localhost:3000/docs for full Swagger UI documentation.
 
 ### Quick Reference
 
@@ -184,10 +191,33 @@ curl -X POST http://localhost:3000/api/appointments \
     "service_id": 501,
     "patient_name": "John Doe",
     "patient_email": "john@example.com",
-    "starts_at": "2025-12-20T10:00:00+00:00",
-    "ends_at": "2025-12-20T10:30:00+00:00"
+    "starts_at": "2025-12-20T10:00:00+00:00"
   }'
 ```
+
+
+#### Example: Create Appointment with Idempotency
+
+```bash
+curl -X POST http://localhost:3000/api/appointments \
+  -H "Content-Type: application/json" \
+  -H "X-Tenant-Id: 1" \
+  -H "Idempotency-Key: 550e8400-e29b-41d4-a716-446655440000" \
+  -d '{
+    "doctor_id": 101,
+    "service_id": 501,
+    "patient_name": "John Doe",
+    "patient_email": "john@example.com",
+    "starts_at": "2025-12-20T10:00:00+00:00"
+  }'
+```
+
+**Idempotency**: Include an `Idempotency-Key` header (e.g., UUID) to prevent duplicate bookings. The same request with the same key will return the same response within 24 hours without creating duplicates.
+
+**Frontend Implementation**: The React frontend automatically generates and includes idempotency keys for all appointment bookings, protecting against:
+- User double-clicks on the "Book Appointment" button
+- Network retries from poor connectivity
+- Accidental duplicate submissions
 
 #### Example: Search Availability
 
@@ -217,9 +247,10 @@ curl "http://localhost:3000/api/availability?service_id=501&from=2025-12-20T08:0
 1. Create account at [neon.tech](https://neon.tech)
 2. Create new project
 3. Copy connection string
-4. Run migration:
+4. Run DDL and seed data:
    ```bash
-   psql <neon-connection-string> -f database/migrations/001_initial_schema.sql
+   psql <neon-connection-string> -f db/ddl.sql
+   psql <neon-connection-string> -f db/seed.sql
    ```
 
 **Frontend (Vercel)**
@@ -282,12 +313,18 @@ VITE_API_URL=https://your-backend-url.com
 
 ### Query Performance
 
-| Query Type | Target | Actual (with indexes) |
-|-----------|--------|----------------------|
+| Query Type | Target | Actual |
+|-----------|--------|--------|
 | Tenant lookup | <10ms | ~2-5ms |
-| Availability search | <300ms | ~10-20ms |
+| Availability search | <300ms | ~10-20ms (local DB) |
 | Create appointment | <100ms | ~5-10ms |
 | List appointments | <100ms | ~5-15ms |
+
+**Performance Features**:
+- **Parallel data loading** - Concurrent database queries with `Promise.all()`
+- **O(1) conflict detection** - Pre-indexed Maps for fast appointment validation
+- **Strategic indexes** - Composite and partial indexes on hot query paths
+- **In-memory caching** - Working hours and resource lookups optimized for speed
 
 ### Scalability
 
@@ -297,10 +334,11 @@ VITE_API_URL=https://your-backend-url.com
 - Concurrent users: 1000+
 
 **Optimization strategies:**
-1. **Database indexes** on hot query paths
-2. **Exclusion constraints** for O(1) conflict detection
-3. **Connection pooling** (max 20 connections)
-4. **Optional Redis caching** for 80% load reduction
+1. **Database indexes** on hot query paths (composite, partial, GiST)
+2. **Exclusion constraints** for database-level conflict prevention
+3. **Parallel data loading** with `Promise.all()` for concurrent queries
+4. **In-memory pre-indexing** for O(1) conflict lookups
+5. **Connection pooling** (max 20 connections)
 
 ### Load Testing
 
@@ -348,7 +386,7 @@ npm test
 ## 📖 Additional Documentation
 
 - [DESIGN.md](./DESIGN.md) - Architecture, design decisions, and trade-offs
-- [API Documentation](http://localhost:3000/api-docs) - Interactive Swagger UI
+- [API Documentation](http://localhost:3000/docs) - Interactive Swagger UI
 - [db/ddl.sql](./db/ddl.sql) - Complete database schema with rationale
 - [db/seed.sql](./db/seed.sql) - Test data for manual QA
 
@@ -401,7 +439,7 @@ kill -9 <PID>
 ## 📞 Support
 
 For questions or issues:
-1. Check the [API Documentation](http://localhost:3000/api-docs)
+1. Check the [API Documentation](http://localhost:3000/docs)
 2. Review the troubleshooting section
 3. Check Docker logs: `docker-compose logs`
 

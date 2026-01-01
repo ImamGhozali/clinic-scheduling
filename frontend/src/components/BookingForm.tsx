@@ -1,10 +1,23 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { apiService } from '../services/api';
 import { useAppStore } from '../store/appStore';
 import toast from 'react-hot-toast';
 import { Calendar, User, Mail, Phone, FileText, Clock } from 'lucide-react';
+
+// Generate UUID v4 for idempotency key
+function generateUUID(): string {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  // Fallback for older browsers
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
 
 export function BookingForm() {
   const { selectedService, selectedSlot } = useAppStore();
@@ -17,8 +30,13 @@ export function BookingForm() {
     notes: '',
   });
 
+  // Generate idempotency key once per booking attempt
+  // Ref ensures the same key is used for retries
+  const idempotencyKeyRef = useRef<string>(generateUUID());
+
   const createAppointmentMutation = useMutation({
-    mutationFn: apiService.createAppointment.bind(apiService),
+    mutationFn: (data: any) => 
+      apiService.createAppointment(data, idempotencyKeyRef.current),
     onSuccess: () => {
       toast.success('Appointment booked successfully!');
       setFormData({
@@ -27,11 +45,53 @@ export function BookingForm() {
         patient_phone: '',
         notes: '',
       });
+      // Generate new idempotency key for next booking
+      idempotencyKeyRef.current = generateUUID();
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['availability'] });
       queryClient.invalidateQueries({ queryKey: ['appointments'] });
     },
     onError: (error: any) => {
+      // Handle 409 Conflict errors gracefully
+      if (error.response?.status === 409) {
+        const conflicts = error.response?.data?.conflicts || [];
+        
+        if (conflicts.length > 0) {
+          // Format conflict details for user-friendly display
+          const conflict = conflicts[0]; // Show first conflict
+          const startTime = format(new Date(conflict.conflictingTime.starts_at), 'p');
+          const endTime = format(new Date(conflict.conflictingTime.ends_at), 'p');
+          
+          let conflictMessage = '';
+          if (conflict.resource === 'doctor') {
+            conflictMessage = `Doctor is already booked from ${startTime} to ${endTime}`;
+          } else if (conflict.resource === 'room') {
+            conflictMessage = `Room is occupied from ${startTime} to ${endTime}`;
+          } else if (conflict.resource === 'device') {
+            conflictMessage = `Required device is in use from ${startTime} to ${endTime}`;
+          } else {
+            conflictMessage = `Resource conflict from ${startTime} to ${endTime}`;
+          }
+          
+          toast.error(
+            `This time slot is no longer available. ${conflictMessage}. Please select another time slot.`,
+            { duration: 6000 }
+          );
+          
+          // Refresh availability to show updated slots
+          queryClient.invalidateQueries({ queryKey: ['availability'] });
+          return;
+        }
+        
+        // Fallback for 409 without detailed conflicts
+        toast.error('This time slot is no longer available. Please select another time slot.', {
+          duration: 5000,
+        });
+        queryClient.invalidateQueries({ queryKey: ['availability'] });
+        return;
+      }
+      
+      // Generic error handling for non-409 errors
       const message = error.response?.data?.message || 'Failed to book appointment';
       toast.error(message);
     },
@@ -57,7 +117,7 @@ export function BookingForm() {
       patient_email: formData.patient_email || undefined,
       patient_phone: formData.patient_phone || undefined,
       starts_at: selectedSlot.start,
-      ends_at: selectedSlot.end,
+      // ends_at is calculated automatically by the backend based on service duration
       notes: formData.notes || undefined,
     });
   };
