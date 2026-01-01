@@ -9,6 +9,7 @@ import {
   Appointment,
   WorkingHours,
   Break,
+  RecurringBreak,
   ResourceType,
   AppointmentStatus,
 } from '../entities';
@@ -25,9 +26,18 @@ export interface AvailabilitySlot {
   end: string; // ISO 8601
 }
 
+export interface ServiceMetadata {
+  id: number;
+  name: string;
+  duration_min: number;
+  buffer_before_min: number;
+  buffer_after_min: number;
+}
+
 export interface AvailabilitySearchResult {
   slots: AvailabilitySlot[];
   limit: number;
+  service: ServiceMetadata;
 }
 
 @Injectable()
@@ -47,7 +57,9 @@ export class AvailabilityService {
     private workingHoursRepository: Repository<WorkingHours>,
     @InjectRepository(Break)
     private breakRepository: Repository<Break>,
-  ) {}
+    @InjectRepository(RecurringBreak)
+    private recurringBreakRepository: Repository<RecurringBreak>,
+  ) { }
 
   /**
    * Search for next 3 available time slots for a service
@@ -103,7 +115,17 @@ export class AvailabilityService {
     }
 
     if (doctors.length === 0) {
-      return { slots: [], limit: 3 };
+      return {
+        slots: [],
+        limit: 3,
+        service: {
+          id: service.id,
+          name: service.name,
+          duration_min: service.durationMin,
+          buffer_before_min: service.bufferBeforeMin,
+          buffer_after_min: service.bufferAfterMin,
+        },
+      };
     }
 
     // 3. Get available rooms
@@ -112,7 +134,17 @@ export class AvailabilityService {
     });
 
     if (rooms.length === 0) {
-      return { slots: [], limit: 3 };
+      return {
+        slots: [],
+        limit: 3,
+        service: {
+          id: service.id,
+          name: service.name,
+          duration_min: service.durationMin,
+          buffer_before_min: service.bufferBeforeMin,
+          buffer_after_min: service.bufferAfterMin,
+        },
+      };
     }
 
     // 4. Get required devices if any
@@ -134,7 +166,17 @@ export class AvailabilityService {
 
     // If search start is after end date, return empty results
     if (searchStartDate >= endDate) {
-      return { slots: [], limit: 3 };
+      return {
+        slots: [],
+        limit: 3,
+        service: {
+          id: service.id,
+          name: service.name,
+          duration_min: service.durationMin,
+          buffer_before_min: service.bufferBeforeMin,
+          buffer_after_min: service.bufferAfterMin,
+        },
+      };
     }
 
     // 6. Get all appointments in range for conflict checking
@@ -147,11 +189,19 @@ export class AvailabilityService {
       relations: ['devices'],
     });
 
-    // 7. Get all breaks in range
+    // 7. Get all one-time breaks in range
     const breaks = await this.breakRepository.find({
       where: {
         tenantId,
         startsAt: Between(startDate, endDate) as any,
+      },
+    });
+
+    // 7.5. Get all active recurring breaks
+    const recurringBreaks = await this.recurringBreakRepository.find({
+      where: {
+        tenantId,
+        isActive: true,
       },
     });
 
@@ -164,7 +214,20 @@ export class AvailabilityService {
 
     // Use service duration as search increment for realistic clinic scheduling
     // Start from current time or requested start time, whichever is later
-    let currentTime = searchStartDate;
+    const roundToNextSlot = (date: Date, intervalMinutes: number): Date => {
+      const minutes = date.getMinutes();
+      const roundedMinutes = Math.ceil(minutes / intervalMinutes) * intervalMinutes;
+
+      const rounded = new Date(date);
+      rounded.setMinutes(roundedMinutes);
+      rounded.setSeconds(0);
+      rounded.setMilliseconds(0);
+
+      return rounded;
+    };
+
+    // Then replace line 217 with:
+    let currentTime = roundToNextSlot(searchStartDate, slotDuration);
     const searchIncrement = slotDuration; // Search at service duration intervals
 
     while (currentTime < endDate && slots.length < 3) {
@@ -195,6 +258,7 @@ export class AvailabilityService {
           const hasConflict = this.hasConflict(
             appointments,
             breaks,
+            recurringBreaks,
             doctor.id,
             room.id,
             devices.map((d) => d.id),
@@ -232,6 +296,13 @@ export class AvailabilityService {
     return {
       slots,
       limit: 3,
+      service: {
+        id: service.id,
+        name: service.name,
+        duration_min: service.durationMin,
+        buffer_before_min: service.bufferBeforeMin,
+        buffer_after_min: service.bufferAfterMin,
+      },
     };
   }
 
@@ -272,11 +343,12 @@ export class AvailabilityService {
   }
 
   /**
-   * Check if there's a conflict with existing appointments or breaks
+   * Check if there's a conflict with existing appointments, one-time breaks, or recurring breaks
    */
   private hasConflict(
     appointments: Appointment[],
     breaks: Break[],
+    recurringBreaks: RecurringBreak[],
     doctorId: number,
     roomId: number,
     deviceIds: number[],
@@ -315,7 +387,7 @@ export class AvailabilityService {
       if (deviceConflict) return true;
     }
 
-    // Check breaks
+    // Check one-time breaks
     const breakConflict = breaks.some((brk) => {
       if (brk.startsAt >= slotEnd || brk.endsAt <= slotStart) return false;
 
@@ -335,7 +407,47 @@ export class AvailabilityService {
       return false;
     });
 
-    return breakConflict;
+    if (breakConflict) return true;
+
+    // Check recurring breaks
+    const dayOfWeek = getDay(slotStart);
+    const recurringBreakConflict = recurringBreaks.some((recBreak) => {
+      // Check if this recurring break applies to this day
+      if (recBreak.dayOfWeek !== null && recBreak.dayOfWeek !== dayOfWeek) {
+        return false;
+      }
+
+      // Check if the slot overlaps with the recurring break time
+      const [breakStartHour, breakStartMin] = recBreak.startTime.split(':').map(Number);
+      const [breakEndHour, breakEndMin] = recBreak.endTime.split(':').map(Number);
+
+      const breakStart = new Date(slotStart);
+      breakStart.setHours(breakStartHour, breakStartMin, 0, 0);
+
+      const breakEnd = new Date(slotStart);
+      breakEnd.setHours(breakEndHour, breakEndMin, 0, 0);
+
+      // Check if times overlap
+      if (breakStart >= slotEnd || breakEnd <= slotStart) return false;
+
+      // Check if it applies to this resource
+      if (recBreak.resourceType === ResourceType.DOCTOR && recBreak.resourceId === doctorId) {
+        return true;
+      }
+      if (recBreak.resourceType === ResourceType.ROOM && recBreak.resourceId === roomId) {
+        return true;
+      }
+      if (
+        recBreak.resourceType === ResourceType.DEVICE &&
+        deviceIds.includes(recBreak.resourceId)
+      ) {
+        return true;
+      }
+
+      return false;
+    });
+
+    return recurringBreakConflict;
   }
 }
 

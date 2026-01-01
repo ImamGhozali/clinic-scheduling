@@ -7,4 +7,5 @@ export * from './device.entity';
 export * from './appointment.entity';
 export * from './working-hours.entity';
 export * from './break.entity';
+export * from './recurring-break.entity';
 

@@ -167,7 +167,41 @@ CREATE TABLE breaks (
 
 CREATE INDEX idx_breaks_tenant_resource_time ON breaks(tenant_id, resource_type, resource_id, starts_at);
 
-COMMENT ON TABLE breaks IS 'Scheduled breaks, holidays, and maintenance windows for any resource type';
+COMMENT ON TABLE breaks IS 'One-time breaks, holidays, and maintenance windows for any resource type';
+
+-- ============================================
+-- 8.5. RECURRING BREAKS TABLE
+-- ============================================
+CREATE TABLE recurring_breaks (
+    id SERIAL PRIMARY KEY,
+    tenant_id INTEGER NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    resource_type resource_type NOT NULL,
+    resource_id INTEGER NOT NULL,
+    day_of_week INTEGER CHECK (day_of_week IS NULL OR (day_of_week >= 0 AND day_of_week <= 6)),
+    start_time TIME NOT NULL,
+    end_time TIME NOT NULL,
+    reason VARCHAR(255),
+    is_active BOOLEAN DEFAULT TRUE,
+    effective_from DATE DEFAULT CURRENT_DATE,
+    effective_until DATE,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT recurring_breaks_time_check CHECK (end_time > start_time)
+);
+
+-- Indexes for performance
+CREATE INDEX idx_recurring_breaks_tenant_resource 
+    ON recurring_breaks(tenant_id, resource_type, resource_id)
+    WHERE is_active = true;
+
+CREATE INDEX idx_recurring_breaks_tenant_day 
+    ON recurring_breaks(tenant_id, day_of_week)
+    WHERE is_active = true;
+
+COMMENT ON TABLE recurring_breaks IS 
+'Recurring break patterns (daily/weekly) for doctors, rooms, and devices. Complements the breaks table for one-time events.';
+
+COMMENT ON COLUMN recurring_breaks.day_of_week IS 
+'NULL for daily breaks (applies every day), 0-6 for weekly breaks (0=Sunday, 1=Monday, ..., 6=Saturday)';
 
 -- ============================================
 -- 9. APPOINTMENTS TABLE (Core table - PARTITIONED BY MONTH)

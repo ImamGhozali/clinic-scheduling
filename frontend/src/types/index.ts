@@ -49,9 +49,18 @@ export interface TimeSlot {
   end: string;
 }
 
+export interface ServiceMetadata {
+  id: number;
+  name: string;
+  duration_min: number;
+  buffer_before_min: number;
+  buffer_after_min: number;
+}
+
 export interface AvailabilityResponse {
   slots: TimeSlot[];
   limit: number;
+  service: ServiceMetadata;
 }
 
 export interface CreateAppointmentRequest {

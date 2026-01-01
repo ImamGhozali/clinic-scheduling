@@ -12,6 +12,7 @@ import {
   Appointment,
   WorkingHours,
   Break,
+  RecurringBreak,
 } from './entities';
 import { AppointmentsController } from './controllers/appointments.controller';
 import { AvailabilityController } from './controllers/availability.controller';
@@ -55,6 +56,7 @@ import { TenantGuard } from './guards/tenant.guard';
         Appointment,
         WorkingHours,
         Break,
+        RecurringBreak,
       ],
       synchronize: false, // Use migrations in production
       // SSL configuration for Neon (required for secure connections)
@@ -75,6 +77,7 @@ import { TenantGuard } from './guards/tenant.guard';
       Appointment,
       WorkingHours,
       Break,
+      RecurringBreak,
     ]),
   ],
   controllers: [

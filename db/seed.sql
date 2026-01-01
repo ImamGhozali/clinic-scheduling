@@ -184,36 +184,62 @@ ON CONFLICT DO NOTHING;
 SELECT setval('appointments_id_seq', (SELECT MAX(id) FROM appointments));
 
 -- ============================================
--- 9. BREAKS (Testing break detection)
+-- 9. RECURRING BREAKS (Daily/Weekly patterns)
 -- ============================================
--- Add breaks to test the break detection logic for doctors, rooms, and devices
+-- Add recurring breaks for daily lunch breaks and weekly meetings
+-- Times are in local time (will be applied to each day)
+
+INSERT INTO recurring_breaks (tenant_id, resource_type, resource_id, day_of_week, start_time, end_time, reason, is_active, effective_from)
+VALUES 
+-- Dr. Sarah Smith - Daily lunch break 12:00-13:00 (Monday-Friday)
+(1, 'doctor', 101, 1, '12:00', '13:00', 'Lunch break', true, '2025-01-01'),
+(1, 'doctor', 101, 2, '12:00', '13:00', 'Lunch break', true, '2025-01-01'),
+(1, 'doctor', 101, 3, '12:00', '13:00', 'Lunch break', true, '2025-01-01'),
+(1, 'doctor', 101, 4, '12:00', '13:00', 'Lunch break', true, '2025-01-01'),
+(1, 'doctor', 101, 5, '12:00', '13:00', 'Lunch break', true, '2025-01-01'),
+
+-- Dr. John Doe - Daily lunch break 13:00-14:00 (Monday-Friday)
+(1, 'doctor', 102, 1, '13:00', '14:00', 'Lunch break', true, '2025-01-01'),
+(1, 'doctor', 102, 2, '13:00', '14:00', 'Lunch break', true, '2025-01-01'),
+(1, 'doctor', 102, 3, '13:00', '14:00', 'Lunch break', true, '2025-01-01'),
+(1, 'doctor', 102, 4, '13:00', '14:00', 'Lunch break', true, '2025-01-01'),
+(1, 'doctor', 102, 5, '13:00', '14:00', 'Lunch break', true, '2025-01-01'),
+
+-- Dr. Emily Johnson - Daily lunch break 12:00-12:30 (Monday-Friday)
+(1, 'doctor', 103, 1, '12:00', '12:30', 'Lunch break', true, '2025-01-01'),
+(1, 'doctor', 103, 2, '12:00', '12:30', 'Lunch break', true, '2025-01-01'),
+(1, 'doctor', 103, 3, '12:00', '12:30', 'Lunch break', true, '2025-01-01'),
+(1, 'doctor', 103, 4, '12:00', '12:30', 'Lunch break', true, '2025-01-01'),
+(1, 'doctor', 103, 5, '12:00', '12:30', 'Lunch break', true, '2025-01-01'),
+
+-- Weekly staff meeting - Every Monday 14:00-15:00 for all doctors
+(1, 'doctor', 101, 1, '14:00', '15:00', 'Weekly staff meeting', true, '2025-01-01'),
+(1, 'doctor', 102, 1, '14:00', '15:00', 'Weekly staff meeting', true, '2025-01-01'),
+(1, 'doctor', 103, 1, '14:00', '15:00', 'Weekly staff meeting', true, '2025-01-01')
+ON CONFLICT DO NOTHING;
+
+-- ============================================
+-- 10. BREAKS (One-time events)
+-- ============================================
+-- Add one-time breaks for specific dates: vacations, maintenance, calibration
 -- All times are in UTC (Berlin time - 1 hour during winter)
 
 INSERT INTO breaks (tenant_id, resource_type, resource_id, starts_at, ends_at, reason)
 VALUES 
--- Dr. Sarah Smith lunch breaks (12:00-13:00 Berlin = 11:00-12:00 UTC)
--- Multiple days for testing
-(1, 'doctor', 101, '2025-12-15 11:00:00+00'::TIMESTAMPTZ, '2025-12-15 12:00:00+00'::TIMESTAMPTZ, 'Lunch break'),
-(1, 'doctor', 101, '2025-12-16 11:00:00+00'::TIMESTAMPTZ, '2025-12-16 12:00:00+00'::TIMESTAMPTZ, 'Lunch break'),
-(1, 'doctor', 101, '2025-12-17 11:00:00+00'::TIMESTAMPTZ, '2025-12-17 12:00:00+00'::TIMESTAMPTZ, 'Lunch break'),
-(1, 'doctor', 101, '2025-12-18 11:00:00+00'::TIMESTAMPTZ, '2025-12-18 12:00:00+00'::TIMESTAMPTZ, 'Lunch break'),
-(1, 'doctor', 101, '2025-12-19 11:00:00+00'::TIMESTAMPTZ, '2025-12-19 12:00:00+00'::TIMESTAMPTZ, 'Lunch break'),
+-- Doctor one-time breaks (vacation, conferences, etc.)
+(1, 'doctor', 101, '2025-12-25 00:00:00+00'::TIMESTAMPTZ, '2025-12-26 00:00:00+00'::TIMESTAMPTZ, 'Christmas vacation'),
+(1, 'doctor', 102, '2026-01-20 08:00:00+00'::TIMESTAMPTZ, '2026-01-20 17:00:00+00'::TIMESTAMPTZ, 'Attending cardiology conference'),
+(1, 'doctor', 103, '2026-02-14 13:00:00+00'::TIMESTAMPTZ, '2026-02-14 15:00:00+00'::TIMESTAMPTZ, 'Pediatric training session'),
 
--- Dr. John Doe lunch breaks (13:00-14:00 Berlin = 12:00-13:00 UTC)
-(1, 'doctor', 102, '2026-01-15 12:00:00+00'::TIMESTAMPTZ, '2026-01-15 13:00:00+00'::TIMESTAMPTZ, 'Lunch break'),
-(1, 'doctor', 102, '2026-01-16 12:00:00+00'::TIMESTAMPTZ, '2026-01-16 13:00:00+00'::TIMESTAMPTZ, 'Lunch break'),
-
--- Dr. Emily Johnson lunch breaks (12:00-12:30 Berlin = 11:00-11:30 UTC)
-(1, 'doctor', 103, '2026-02-10 11:00:00+00'::TIMESTAMPTZ, '2026-02-10 11:30:00+00'::TIMESTAMPTZ, 'Lunch break'),
-(1, 'doctor', 103, '2026-02-11 11:00:00+00'::TIMESTAMPTZ, '2026-02-11 11:30:00+00'::TIMESTAMPTZ, 'Lunch break'),
-
--- Room maintenance windows
+-- Room maintenance windows (one-time scheduled maintenance)
 (1, 'room', 301, '2025-12-15 13:00:00+00'::TIMESTAMPTZ, '2025-12-15 14:00:00+00'::TIMESTAMPTZ, 'Deep cleaning and maintenance'),
 (1, 'room', 302, '2026-01-15 15:00:00+00'::TIMESTAMPTZ, '2026-01-15 16:00:00+00'::TIMESTAMPTZ, 'Equipment upgrade'),
+(1, 'room', 303, '2026-02-05 08:00:00+00'::TIMESTAMPTZ, '2026-02-05 12:00:00+00'::TIMESTAMPTZ, 'HVAC system repair'),
 
--- Device calibration and maintenance
+-- Device calibration and maintenance (one-time scheduled events)
 (1, 'device', 401, '2026-01-15 09:00:00+00'::TIMESTAMPTZ, '2026-01-15 10:00:00+00'::TIMESTAMPTZ, 'ECG machine calibration'),
-(1, 'device', 402, '2026-02-10 14:00:00+00'::TIMESTAMPTZ, '2026-02-10 15:00:00+00'::TIMESTAMPTZ, 'Ultrasound scanner maintenance')
+(1, 'device', 402, '2026-02-10 14:00:00+00'::TIMESTAMPTZ, '2026-02-10 15:00:00+00'::TIMESTAMPTZ, 'Ultrasound scanner maintenance'),
+(1, 'device', 403, '2025-12-20 10:00:00+00'::TIMESTAMPTZ, '2025-12-20 11:00:00+00'::TIMESTAMPTZ, 'X-Ray machine annual inspection')
 ON CONFLICT DO NOTHING;
 
 -- ============================================
@@ -230,7 +256,8 @@ ON CONFLICT DO NOTHING;
 -- - Doctor-service relationships (which doctors can perform which services)
 -- - Working hours for all doctors (Mon-Fri)
 -- - 3 sample appointments (IDs: 1001+)
--- - 14 breaks (lunch breaks, room maintenance, device calibration)
+-- - 18 recurring breaks (daily lunch breaks, weekly staff meetings)
+-- - 9 one-time breaks (vacations, room maintenance, device calibration)
 -- 
 -- ID Ranges:
 -- - Tenants: 1-99
@@ -264,7 +291,8 @@ SELECT
     (SELECT COUNT(*) FROM services) as services,
     (SELECT COUNT(*) FROM working_hours) as working_hours,
     (SELECT COUNT(*) FROM appointments) as appointments,
-    (SELECT COUNT(*) FROM breaks) as breaks;
+    (SELECT COUNT(*) FROM recurring_breaks) as recurring_breaks,
+    (SELECT COUNT(*) FROM breaks) as one_time_breaks;
 
 -- Show partition distribution
 SELECT 
