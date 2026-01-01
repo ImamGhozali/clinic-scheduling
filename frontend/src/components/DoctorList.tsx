@@ -4,10 +4,10 @@ import { useAppStore } from '../store/appStore';
 import { User, Stethoscope } from 'lucide-react';
 
 export function DoctorList() {
-  const { selectedDoctor, selectedService, setSelectedDoctor } = useAppStore();
+  const { selectedDoctor, selectedService, setSelectedDoctor, tenantId } = useAppStore();
 
   const { data: doctors, isLoading, error } = useQuery({
-    queryKey: ['doctors', selectedService?.id],
+    queryKey: ['doctors', tenantId, selectedService?.id],
     queryFn: () => apiService.getDoctors(selectedService?.id),
     enabled: !!selectedService, // Only fetch when a service is selected
   });

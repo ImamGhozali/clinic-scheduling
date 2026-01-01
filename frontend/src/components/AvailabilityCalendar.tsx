@@ -5,10 +5,10 @@ import { useAppStore } from '../store/appStore';
 import { Calendar, Clock } from 'lucide-react';
 
 export function AvailabilityCalendar() {
-  const { selectedDoctor, selectedService, selectedDate, selectedSlot, setSelectedDate, setSelectedSlot } = useAppStore();
+  const { selectedDoctor, selectedService, selectedDate, selectedSlot, setSelectedDate, setSelectedSlot, tenantId } = useAppStore();
 
   const { data: availability, isLoading } = useQuery({
-    queryKey: ['availability', selectedService?.id, selectedDoctor?.id, format(selectedDate, 'yyyy-MM-dd')],
+    queryKey: ['availability', tenantId, selectedService?.id, selectedDoctor?.id, format(selectedDate, 'yyyy-MM-dd')],
     queryFn: () => {
       // Convert date to ISO 8601 datetime range for Europe/Berlin timezone
       const dateStr = format(selectedDate, 'yyyy-MM-dd');
