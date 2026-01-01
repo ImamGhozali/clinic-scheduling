@@ -17,6 +17,7 @@ import {
   ApiSecurity,
   ApiParam,
   ApiQuery,
+  ApiHeader,
 } from '@nestjs/swagger';
 import { AppointmentsService } from '../services/appointments.service';
 import { TenantGuard } from '../guards/tenant.guard';
@@ -36,7 +37,20 @@ export class AppointmentsController {
   @ApiOperation({
     summary: 'Create a new appointment',
     description:
-      'Creates an appointment with conflict detection for doctor, room, and devices. Returns 409 if conflicts detected. The end time is automatically calculated from service duration if not provided.',
+      'Creates an appointment with conflict detection for doctor, room, and devices. Returns 409 if conflicts detected. The end time is automatically calculated from service duration if not provided. Supports optional Idempotency-Key header to prevent duplicate bookings.',
+  })
+  @ApiHeader({
+    name: 'Idempotency-Key',
+    description: 'Optional unique key (e.g., UUID) to prevent duplicate bookings. If provided, the same request will return the same response within 24 hours.',
+    required: false,
+    schema: {
+      type: 'string',
+      example: '550e8400-e29b-41d4-a716-446655440000',
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Idempotent response - appointment was already created with this Idempotency-Key',
   })
   @ApiResponse({
     status: 201,

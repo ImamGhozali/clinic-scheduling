@@ -204,7 +204,33 @@ COMMENT ON COLUMN recurring_breaks.day_of_week IS
 'NULL for daily breaks (applies every day), 0-6 for weekly breaks (0=Sunday, 1=Monday, ..., 6=Saturday)';
 
 -- ============================================
--- 9. APPOINTMENTS TABLE (Core table - PARTITIONED BY MONTH)
+-- 9. IDEMPOTENCY KEYS TABLE
+-- ============================================
+CREATE TABLE idempotency_keys (
+    id SERIAL PRIMARY KEY,
+    tenant_id INTEGER NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    idempotency_key VARCHAR(255) NOT NULL,
+    request_path VARCHAR(255) NOT NULL,
+    request_method VARCHAR(10) NOT NULL,
+    response_status INTEGER,
+    response_body JSONB,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMPTZ DEFAULT (CURRENT_TIMESTAMP + INTERVAL '24 hours'),
+    CONSTRAINT idempotency_keys_unique UNIQUE (tenant_id, idempotency_key)
+);
+
+-- Index for fast lookup and automatic cleanup of expired keys
+CREATE INDEX idx_idempotency_keys_tenant_key ON idempotency_keys(tenant_id, idempotency_key);
+CREATE INDEX idx_idempotency_keys_expires_at ON idempotency_keys(expires_at);
+
+COMMENT ON TABLE idempotency_keys IS 
+'Stores idempotency keys to prevent duplicate requests. Keys expire after 24 hours.';
+
+COMMENT ON COLUMN idempotency_keys.idempotency_key IS 
+'Client-provided unique key (e.g., UUID) sent via Idempotency-Key header';
+
+-- ============================================
+-- 10. APPOINTMENTS TABLE (Core table - PARTITIONED BY MONTH)
 -- ============================================
 CREATE TYPE appointment_status AS ENUM ('scheduled', 'cancelled', 'completed', 'no_show');
 

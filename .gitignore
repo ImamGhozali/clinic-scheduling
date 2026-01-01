@@ -36,3 +36,4 @@ docker-compose.override.yml
 *.md
 !README.md
 !DESIGN.md
+coverage/

@@ -90,28 +90,28 @@ export class AvailabilityService {
     // PARALLEL LOADING: Load all independent data in parallel for maximum performance
     // This reduces total query time from ~1.7s (sequential) to ~400-500ms (parallel)
     const [service, doctors, rooms, appointments, breaks, recurringBreaks] = await Promise.all([
-      // 1. Get service details
+    // 1. Get service details
       this.serviceRepository.findOne({
-        where: { id: serviceId, tenantId },
-        relations: ['requiredDevices'],
+      where: { id: serviceId, tenantId },
+      relations: ['requiredDevices'],
       }),
 
-      // 2. Get doctors qualified for this service
+    // 2. Get doctors qualified for this service
       doctorIds && doctorIds.length > 0
         ? this.doctorRepository
-            .createQueryBuilder('doctor')
-            .innerJoin('doctor_services', 'ds', 'ds.doctor_id = doctor.id')
-            .where('doctor.id IN (:...doctorIds)', { doctorIds })
-            .andWhere('doctor.tenant_id = :tenantId', { tenantId })
-            .andWhere('doctor.is_active = :isActive', { isActive: true })
-            .andWhere('ds.service_id = :serviceId', { serviceId })
+        .createQueryBuilder('doctor')
+        .innerJoin('doctor_services', 'ds', 'ds.doctor_id = doctor.id')
+        .where('doctor.id IN (:...doctorIds)', { doctorIds })
+        .andWhere('doctor.tenant_id = :tenantId', { tenantId })
+        .andWhere('doctor.is_active = :isActive', { isActive: true })
+        .andWhere('ds.service_id = :serviceId', { serviceId })
             .getMany()
         : this.doctorRepository
-            .createQueryBuilder('doctor')
-            .innerJoin('doctor_services', 'ds', 'ds.doctor_id = doctor.id')
-            .where('doctor.tenant_id = :tenantId', { tenantId })
-            .andWhere('doctor.is_active = :isActive', { isActive: true })
-            .andWhere('ds.service_id = :serviceId', { serviceId })
+        .createQueryBuilder('doctor')
+        .innerJoin('doctor_services', 'ds', 'ds.doctor_id = doctor.id')
+        .where('doctor.tenant_id = :tenantId', { tenantId })
+        .andWhere('doctor.is_active = :isActive', { isActive: true })
+        .andWhere('ds.service_id = :serviceId', { serviceId })
             .getMany(),
 
       // 3. Get available rooms
@@ -201,18 +201,18 @@ export class AvailabilityService {
       // Get required devices if any
       service.requiresDevice && service.requiredDevices.length > 0
         ? this.deviceRepository.find({
-            where: {
+      where: {
               id: In(service.requiredDevices.map((d) => d.id)),
-              tenantId,
+        tenantId,
               isActive: true,
-            },
+      },
           })
         : Promise.resolve([]),
 
       // Pre-load ALL working hours for all doctors in ONE query
       this.workingHoursRepository.find({
-        where: {
-          tenantId,
+      where: {
+        tenantId,
           doctorId: In(doctors.map((d) => d.id)),
           isAvailable: true,
         },
