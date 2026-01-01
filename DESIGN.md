@@ -383,7 +383,7 @@ WHERE is_active = true      -- Only index active doctors
 
 ### Input Validation
 - **DTOs with class-validator**: All inputs validated before processing
-- **UUID validation**: Prevents SQL injection
+- **Parameterized queries**: TypeORM prevents SQL injection via prepared statements
 - **ISO 8601 dates**: Timezone-aware timestamps
 
 ---
@@ -687,10 +687,14 @@ CREATE TABLE idempotency_keys (
 ### Alternative Considered: PostgreSQL RLS (Row-Level Security)
 
 **What it would look like**:
+```sql
 ALTER TABLE appointments ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY tenant_isolation ON appointments
-  USING (tenant_id = current_setting('app.current_tenant')::int);**Why we rejected it**:
+  USING (tenant_id = current_setting('app.current_tenant')::int);
+```
+
+**Why we rejected it**:
 1. **PostgreSQL-specific**: Locks us into one database
 2. **ORM complexity**: TypeORM doesn't have first-class RLS support
 3. **Debugging difficulty**: Harder to trace why queries return empty results
@@ -710,6 +714,7 @@ CREATE POLICY tenant_isolation ON appointments
 4. **Integration tests**: Verify tenant A cannot access tenant B's data
 
 **Example enforcement**:
+```typescript
 async createAppointment(tenantId: number, dto: CreateAppointmentDto) {
   // 1. Validate doctor belongs to tenant
   const doctor = await manager.findOne(Doctor, {
@@ -720,7 +725,10 @@ async createAppointment(tenantId: number, dto: CreateAppointmentDto) {
   const service = await manager.findOne(Service, {
     where: { id: dto.service_id, tenantId },
   });
-}### Verdict
+}
+```
+
+### Verdict
 
 **Service-layer guards are the right choice** for this system because:
 - Meets all security requirements

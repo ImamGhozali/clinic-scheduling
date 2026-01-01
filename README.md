@@ -20,7 +20,7 @@ A production-ready appointment scheduling system with multi-tenant architecture,
 ### Core Features
 - ✅ **Multi-tenant architecture** - Complete data isolation per clinic
 - ✅ **Conflict-free booking** - Database-level prevention of double-booking
-- ✅ **Real-time availability** - Fast availability search (<300ms with optimizations)
+- ✅ **Real-time availability** - Fast availability search (<300ms response time)
 - ✅ **Smart scheduling** - Auto-calculates appointment end times from service duration
 - ✅ **Idempotent requests** - Optional Idempotency-Key header prevents duplicate bookings
 - ✅ **Recurring breaks** - Support for daily/weekly break patterns (lunch, meetings)
@@ -42,9 +42,9 @@ A production-ready appointment scheduling system with multi-tenant architecture,
 ### Backend
 - **Runtime**: Node.js 20
 - **Language**: TypeScript 5.3
-- **Framework**: Express 4
+- **Framework**: NestJS 10
 - **Database**: PostgreSQL 16
-- **Validation**: express-validator
+- **Validation**: class-validator
 - **Documentation**: Swagger/OpenAPI 3.0
 
 ### Frontend
@@ -90,7 +90,7 @@ docker-compose down
 Services will be available at:
 - **Frontend**: http://localhost:5173
 - **Backend API**: http://localhost:3000
-- **API Docs**: http://localhost:3000/api-docs
+- **API Docs**: http://localhost:3000/docs
 - **PostgreSQL**: localhost:5432
 
 ### Manual Setup (Without Docker)
@@ -153,7 +153,7 @@ npm run preview
 
 ### Interactive Documentation
 
-Visit http://localhost:3000/api-docs for full Swagger UI documentation.
+Visit http://localhost:3000/docs for full Swagger UI documentation.
 
 ### Quick Reference
 
@@ -313,18 +313,18 @@ VITE_API_URL=https://your-backend-url.com
 
 ### Query Performance
 
-| Query Type | Target | Actual (optimized) |
-|-----------|--------|-------------------|
+| Query Type | Target | Actual |
+|-----------|--------|--------|
 | Tenant lookup | <10ms | ~2-5ms |
 | Availability search | <300ms | ~10-20ms (local DB) |
 | Create appointment | <100ms | ~5-10ms |
 | List appointments | <100ms | ~5-15ms |
 
-**Performance Improvements**:
-- ✅ **60% faster availability search** - Parallel data loading with `Promise.all()`
-- ✅ **O(1) conflict detection** - Pre-indexed Maps for appointments, breaks, and recurring breaks
-- ✅ **Optimized indexes** - Strategic composite and partial indexes on hot query paths
-- ✅ **Smart caching** - In-memory working hours lookup reduces database roundtrips
+**Performance Features**:
+- **Parallel data loading** - Concurrent database queries with `Promise.all()`
+- **O(1) conflict detection** - Pre-indexed Maps for fast appointment validation
+- **Strategic indexes** - Composite and partial indexes on hot query paths
+- **In-memory caching** - Working hours and resource lookups optimized for speed
 
 ### Scalability
 
@@ -386,7 +386,7 @@ npm test
 ## 📖 Additional Documentation
 
 - [DESIGN.md](./DESIGN.md) - Architecture, design decisions, and trade-offs
-- [API Documentation](http://localhost:3000/api-docs) - Interactive Swagger UI
+- [API Documentation](http://localhost:3000/docs) - Interactive Swagger UI
 - [db/ddl.sql](./db/ddl.sql) - Complete database schema with rationale
 - [db/seed.sql](./db/seed.sql) - Test data for manual QA
 
@@ -439,7 +439,7 @@ kill -9 <PID>
 ## 📞 Support
 
 For questions or issues:
-1. Check the [API Documentation](http://localhost:3000/api-docs)
+1. Check the [API Documentation](http://localhost:3000/docs)
 2. Review the troubleshooting section
 3. Check Docker logs: `docker-compose logs`
 
