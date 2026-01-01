@@ -33,7 +33,11 @@ docker-compose.override.yml
 # Database
 *.sql.backup
 
+# Documentation (except root README and DESIGN)
+docs/
 *.md
 !README.md
 !DESIGN.md
+
+# Test coverage
 coverage/
