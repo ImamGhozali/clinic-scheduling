@@ -36,11 +36,27 @@ export class AppointmentsController {
   @ApiOperation({
     summary: 'Create a new appointment',
     description:
-      'Creates an appointment with conflict detection for doctor, room, and devices. Returns 409 if conflicts detected.',
+      'Creates an appointment with conflict detection for doctor, room, and devices. Returns 409 if conflicts detected. The end time is automatically calculated from service duration if not provided.',
   })
   @ApiResponse({
     status: 201,
     description: 'Appointment created successfully',
+    schema: {
+      example: {
+        id: 1001,
+        tenantId: 1,
+        doctorId: 101,
+        serviceId: 501,
+        patientId: 201,
+        roomId: 301,
+        startsAt: '2026-01-15T09:00:00.000Z',
+        endsAt: '2026-01-15T09:30:00.000Z',
+        status: 'scheduled',
+        notes: 'Auto-calculated end time from service duration',
+        createdAt: '2026-01-01T12:00:00.000Z',
+        updatedAt: '2026-01-01T12:00:00.000Z',
+      },
+    },
   })
   @ApiResponse({
     status: 400,

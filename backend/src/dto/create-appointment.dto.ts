@@ -51,12 +51,13 @@ export class CreateAppointmentDto {
   @IsISO8601()
   starts_at: string;
 
-  @ApiProperty({
-    description: 'End time in ISO 8601 format with timezone',
+  @ApiPropertyOptional({
+    description: 'End time in ISO 8601 format with timezone (optional - calculated from service duration if not provided)',
     example: '2025-09-15T10:00:00+02:00',
   })
+  @IsOptional()
   @IsISO8601()
-  ends_at: string;
+  ends_at?: string;
 
   @ApiPropertyOptional({
     description: 'Optional notes for the appointment',

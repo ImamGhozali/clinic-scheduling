@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, Between, In } from 'typeorm';
 import {
@@ -82,7 +82,24 @@ export class AppointmentsService {
 
       // 5. Calculate appointment times
       const startsAt = new Date(dto.starts_at);
-      const endsAt = new Date(dto.ends_at);
+      
+      // Calculate endsAt from service duration if not provided
+      let endsAt: Date;
+      if (dto.ends_at) {
+        endsAt = new Date(dto.ends_at);
+        
+        // Validate that endsAt matches service duration (if provided)
+        const expectedEndsAt = new Date(startsAt.getTime() + service.durationMin * 60000);
+        const timeDiff = Math.abs(endsAt.getTime() - expectedEndsAt.getTime());
+        if (timeDiff > 60000) { // Allow 1 minute tolerance
+          throw new BadRequestException(
+            `End time must be ${service.durationMin} minutes after start time for this service (expected: ${expectedEndsAt.toISOString()})`,
+          );
+        }
+      } else {
+        // Auto-calculate: starts_at + service duration
+        endsAt = new Date(startsAt.getTime() + service.durationMin * 60000);
+      }
 
       // Time range including buffers for conflict detection (from service)
       const bufferBeforeMin = service.bufferBeforeMin;
