@@ -195,6 +195,7 @@ curl -X POST http://localhost:3000/api/appointments \
   }'
 ```
 
+
 #### Example: Create Appointment with Idempotency
 
 ```bash
