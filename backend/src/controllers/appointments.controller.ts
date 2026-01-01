@@ -79,7 +79,7 @@ export class AppointmentsController {
   }
 
   @Delete(':id')
-  @HttpCode(HttpStatus.OK)
+  @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
     summary: 'Cancel an appointment',
     description: 'Changes appointment status to cancelled',
@@ -90,7 +90,7 @@ export class AppointmentsController {
     example: '550e8400-e29b-41d4-a716-446655440000',
   })
   @ApiResponse({
-    status: 200,
+    status: 204,
     description: 'Appointment cancelled successfully',
   })
   @ApiResponse({
@@ -100,8 +100,8 @@ export class AppointmentsController {
   async cancelAppointment(
     @GetTenant() tenant: Tenant,
     @Param('id') id: string,
-  ) {
-    return await this.appointmentsService.cancelAppointment(tenant.id, parseInt(id, 10));
+  ): Promise<void> {
+    await this.appointmentsService.cancelAppointment(tenant.id, parseInt(id, 10));
   }
 
   @Get(':id')
