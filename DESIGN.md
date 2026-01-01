@@ -215,7 +215,7 @@ EXCLUDE USING gist (
 **Worst case**: ~32,000 comparisons for 10 doctors over 7 days
 **Actual**: ~500-1000 comparisons (most slots eliminated early)
 
-### Optimizations 
+### Optimizations
 
 1. **Parallel data loading** (60% faster):
    ```typescript
