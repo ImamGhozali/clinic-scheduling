@@ -247,6 +247,12 @@ CREATE TABLE appointments_2026_02 PARTITION OF appointments
 -- ============================================
 -- 10. CRITICAL INDEXES FOR PERFORMANCE
 -- ============================================
+-- These indexes are optimized for:
+-- 1. Availability search (<300ms target on local DB)
+-- 2. Conflict detection (doctor, room, device)
+-- 3. Multi-tenant isolation
+-- 4. 50k bookings/day scale
+-- ============================================
 
 -- PRIMARY INDEX: Doctor conflict detection (most critical for 50k bookings/day)
 CREATE INDEX idx_appointments_tenant_doctor_time 
@@ -258,10 +264,11 @@ CREATE INDEX idx_appointments_tenant_room_time
     ON appointments(tenant_id, room_id, starts_at)
     WHERE status = 'scheduled';
 
--- Availability search optimization
-CREATE INDEX idx_appointments_tenant_time 
-    ON appointments(tenant_id, starts_at, ends_at)
-    WHERE status = 'scheduled';
+-- Availability search optimization - composite index with status for range queries
+-- This replaces the simpler idx_appointments_tenant_time with better filtering
+CREATE INDEX idx_appointments_tenant_status_time 
+    ON appointments(tenant_id, status, starts_at, ends_at)
+    WHERE status IN ('scheduled', 'completed');
 
 -- Calendar view: Get doctor's schedule for date range
 CREATE INDEX idx_appointments_doctor_calendar 
@@ -271,6 +278,24 @@ CREATE INDEX idx_appointments_doctor_calendar
 -- Tenant-scoped queries
 CREATE INDEX idx_appointments_tenant_created 
     ON appointments(tenant_id, created_at DESC);
+
+-- Working hours with availability filter (CRITICAL for availability search)
+-- This partial index dramatically speeds up working hours lookups
+CREATE INDEX idx_working_hours_tenant_doctor_day_available 
+    ON working_hours(tenant_id, doctor_id, day_of_week, is_available)
+    WHERE is_available = true;
+
+-- Breaks time range optimization - adds ends_at for better overlap detection
+CREATE INDEX idx_breaks_tenant_time_range 
+    ON breaks(tenant_id, starts_at, ends_at);
+
+-- Device conflict detection optimization - reverse lookup for faster checks
+CREATE INDEX idx_appointment_devices_device_appointment 
+    ON appointment_devices(device_id, appointment_id);
+
+-- Doctor-service lookup optimization - composite index for availability search
+CREATE INDEX idx_doctor_services_service_doctor 
+    ON doctor_services(service_id, doctor_id);
 
 COMMENT ON TABLE appointments IS 'Booked appointments with indexes optimized for conflict detection and availability search';
 
@@ -548,14 +573,19 @@ COMMENT ON FUNCTION drop_old_partitions IS
 -- - All tenant_id columns indexed for multi-tenant isolation
 -- - Composite indexes on (tenant_id, resource_id, time) for conflict detection
 -- - Exclusion constraint on appointments prevents database-level double-booking
--- - Indexes use WHERE clauses to reduce size (only active/scheduled records)
+-- - Partial indexes with WHERE clauses reduce size (only active/scheduled records)
 -- - SERIAL primary keys for simplicity and performance (4 bytes vs 16 bytes for UUID)
+-- - Working hours index includes is_available for faster filtering
+-- - Appointments index includes status for optimized range queries
+-- - Device and doctor-service indexes optimized for availability search
 -- 
 -- Scale Considerations (50k bookings/day):
--- - Indexes support sub-300ms availability search
+-- - Optimized indexes support <300ms availability search (local DB)
+-- - Parallel query execution in application layer
 -- - Exclusion constraints handle concurrent booking attempts
 -- - Monthly partitioning implemented for appointments table
 -- - Integer IDs provide better index performance and lower storage overhead
+-- - Pre-indexed conflict detection for O(1) resource lookups
 -- 
 -- Partitioning Strategy:
 -- - Appointments table partitioned by month (starts_at)
