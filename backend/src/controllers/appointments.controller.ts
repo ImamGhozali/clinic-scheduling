@@ -37,7 +37,7 @@ export class AppointmentsController {
   @ApiOperation({
     summary: 'Create a new appointment',
     description:
-      'Creates an appointment with conflict detection for doctor, room, and devices. Returns 409 if conflicts detected. The end time is automatically calculated from service duration if not provided. Supports optional Idempotency-Key header to prevent duplicate bookings.',
+      'Creates an appointment with conflict detection for doctor, room, and devices. Returns 409 if conflicts detected. The end time is automatically calculated from service duration - do not provide ends_at in request. Supports optional Idempotency-Key header to prevent duplicate bookings.',
   })
   @ApiHeader({
     name: 'Idempotency-Key',

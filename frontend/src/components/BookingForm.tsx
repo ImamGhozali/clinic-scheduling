@@ -117,7 +117,7 @@ export function BookingForm() {
       patient_email: formData.patient_email || undefined,
       patient_phone: formData.patient_phone || undefined,
       starts_at: selectedSlot.start,
-      ends_at: selectedSlot.end,
+      // ends_at is calculated automatically by the backend based on service duration
       notes: formData.notes || undefined,
     });
   };
