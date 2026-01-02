@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { format } from 'date-fns';
+import { formatInTimeZone } from 'date-fns-tz';
 import { apiService } from '../services/api';
 import { useAppStore } from '../store/appStore';
 import toast from 'react-hot-toast';
@@ -59,8 +59,8 @@ export function BookingForm() {
         if (conflicts.length > 0) {
           // Format conflict details for user-friendly display
           const conflict = conflicts[0]; // Show first conflict
-          const startTime = format(new Date(conflict.conflictingTime.starts_at), 'p');
-          const endTime = format(new Date(conflict.conflictingTime.ends_at), 'p');
+          const startTime = formatInTimeZone(new Date(conflict.conflictingTime.starts_at), 'Europe/Berlin', 'p');
+          const endTime = formatInTimeZone(new Date(conflict.conflictingTime.ends_at), 'Europe/Berlin', 'p');
           
           let conflictMessage = '';
           if (conflict.resource === 'doctor') {
@@ -144,7 +144,7 @@ export function BookingForm() {
           <Clock className="w-4 h-4 text-primary-600" />
           <span className="font-medium text-primary-900">Time:</span>
           <span className="text-primary-700">
-            {format(new Date(selectedSlot.start), 'PPpp')}
+            {formatInTimeZone(new Date(selectedSlot.start), 'Europe/Berlin', 'PPpp')}
           </span>
         </div>
       </div>

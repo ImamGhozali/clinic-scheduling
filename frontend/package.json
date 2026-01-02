@@ -9,16 +9,17 @@
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
   },
   "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-router-dom": "^6.21.1",
+    "@tanstack/react-query": "^5.17.9",
     "axios": "^1.6.5",
     "date-fns": "^2.30.0",
+    "date-fns-tz": "^2.0.1",
+    "lucide-react": "^0.303.0",
+    "react": "^18.2.0",
     "react-calendar": "^4.7.0",
-    "@tanstack/react-query": "^5.17.9",
-    "zustand": "^4.4.7",
+    "react-dom": "^18.2.0",
     "react-hot-toast": "^2.4.1",
-    "lucide-react": "^0.303.0"
+    "react-router-dom": "^6.21.1",
+    "zustand": "^4.4.7"
   },
   "devDependencies": {
     "@types/react": "^18.2.47",
@@ -36,4 +37,3 @@
     "vite": "^5.0.11"
   }
 }
-

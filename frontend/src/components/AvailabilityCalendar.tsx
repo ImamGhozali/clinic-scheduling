@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
+import { formatInTimeZone } from 'date-fns-tz';
 import { apiService } from '../services/api';
 import { useAppStore } from '../store/appStore';
 import { Calendar, Clock } from 'lucide-react';
@@ -10,10 +11,10 @@ export function AvailabilityCalendar() {
   const { data: availability, isLoading } = useQuery({
     queryKey: ['availability', tenantId, selectedService?.id, selectedDoctor?.id, format(selectedDate, 'yyyy-MM-dd')],
     queryFn: () => {
-      // Convert date to ISO 8601 datetime range for Europe/Berlin timezone
+      // Convert date to ISO 8601 datetime range in UTC
       const dateStr = format(selectedDate, 'yyyy-MM-dd');
-      const from = `${dateStr}T00:00:00+01:00`;
-      const to = `${dateStr}T23:59:59+01:00`;
+      const from = `${dateStr}T00:00:00Z`;
+      const to = `${dateStr}T23:59:59Z`;
       
       return apiService.getAvailability(
         selectedService!.id,
@@ -69,7 +70,8 @@ export function AvailabilityCalendar() {
         ) : (
           <div className="grid grid-cols-3 gap-2 max-h-96 overflow-y-auto">
             {availability?.slots.map((slot, index) => {
-              const startTime = format(new Date(slot.start), 'HH:mm');
+              // Display time in Europe/Berlin timezone
+              const startTime = formatInTimeZone(new Date(slot.start), 'Europe/Berlin', 'HH:mm');
 
               return (
                 <button
@@ -97,7 +99,7 @@ export function AvailabilityCalendar() {
       {selectedSlot && (
         <div className="p-4 bg-primary-50 border border-primary-200 rounded-lg">
           <p className="text-sm font-medium text-primary-900">
-            Selected: {format(new Date(selectedSlot.start), 'PPpp')}
+            Selected: {formatInTimeZone(new Date(selectedSlot.start), 'Europe/Berlin', 'PPpp')}
           </p>
         </div>
       )}
