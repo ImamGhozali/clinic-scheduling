@@ -253,9 +253,12 @@ export class AvailabilityService {
       return rounded;
     };
 
-    // Then replace line 217 with:
-    let currentTime = roundToNextSlot(searchStartDate, slotDuration);
-    const searchIncrement = slotDuration; // Search at service duration intervals
+    // Start from the search start date directly
+    let currentTime = new Date(searchStartDate);
+    currentTime.setSeconds(0);
+    currentTime.setMilliseconds(0);
+    const searchIncrement = totalDuration; // Search at total duration intervals (including buffers)
+    const timezone = 'Europe/Berlin';
 
     while (currentTime < endDate && slots.length < 3) {
       // Check each doctor
@@ -263,31 +266,47 @@ export class AvailabilityService {
         if (slots.length >= 3) break;
 
         // Check if within working hours (using pre-loaded data, no DB query)
-        const dayOfWeek = getDay(currentTime);
+        // Get day of week in local timezone, not UTC
+        const localTimeForDay = utcToZonedTime(currentTime, timezone);
+        const dayOfWeek = getDay(localTimeForDay);
         const workingHours = allWorkingHours.get(doctor.id)?.get(dayOfWeek);
         
         if (!workingHours) continue;
 
-        // Check if slot fits in working hours (timezone-aware)
-        // Working hours are stored in local time (Europe/Berlin), so we need to convert
-        const timezone = 'Europe/Berlin';
-        const slotEnd = addMinutes(currentTime, totalDuration);
-        
-        // Convert UTC time to local timezone for comparison
-        const localTime = utcToZonedTime(currentTime, timezone);
-        const localSlotEnd = utcToZonedTime(slotEnd, timezone);
-        
+        // Parse working hours times
         const [startHour, startMin] = workingHours.startTime.split(':').map(Number);
         const [endHour, endMin] = workingHours.endTime.split(':').map(Number);
 
+        // Convert UTC time to local timezone for comparison
+        const localTime = utcToZonedTime(currentTime, timezone);
+        const localHour = localTime.getHours();
+        const localMinute = localTime.getMinutes();
+
+        // If we're BEFORE working hours start, snap to working hours start
+        if (localHour < startHour || (localHour === startHour && localMinute < startMin)) {
+          // Calculate how many minutes until working hours start
+          const currentMinutes = localHour * 60 + localMinute;
+          const workingStartMinutes = startHour * 60 + startMin;
+          const minutesToAdd = workingStartMinutes - currentMinutes;
+          
+          // Snap currentTime to working hours start
+          currentTime = addMinutes(currentTime, minutesToAdd);
+          // Don't continue - we want to check this new time
+        }
+
+        // Recalculate local time after potential snap
+        const adjustedLocalTime = utcToZonedTime(currentTime, timezone);
+        const slotEnd = addMinutes(currentTime, totalDuration);
+        const localSlotEnd = utcToZonedTime(slotEnd, timezone);
+
         // Create working hours boundaries in local time
-        const workStart = new Date(localTime);
+        const workStart = new Date(adjustedLocalTime);
         workStart.setHours(startHour, startMin, 0, 0);
 
-        const workEnd = new Date(localTime);
+        const workEnd = new Date(adjustedLocalTime);
         workEnd.setHours(endHour, endMin, 0, 0);
 
-        const isWithinWorkingHours = localTime >= workStart && localSlotEnd <= workEnd;
+        const isWithinWorkingHours = adjustedLocalTime >= workStart && localSlotEnd <= workEnd;
         if (!isWithinWorkingHours) continue;
 
         // Check each room (find first available room, not all rooms)
