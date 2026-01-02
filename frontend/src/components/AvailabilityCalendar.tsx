@@ -6,7 +6,7 @@ import { useAppStore } from '../store/appStore';
 import { Calendar, Clock } from 'lucide-react';
 
 export function AvailabilityCalendar() {
-  const { selectedDoctor, selectedService, selectedDate, selectedSlot, setSelectedDate, setSelectedSlot, tenantId } = useAppStore();
+  const { selectedDoctor, selectedService, selectedDate, selectedSlot, setSelectedDate, setSelectedSlot, tenantId, nextAvailableSlots, setNextAvailableSlots } = useAppStore();
 
   const { data: availability, isLoading } = useQuery({
     queryKey: ['availability', tenantId, selectedService?.id, selectedDoctor?.id, format(selectedDate, 'yyyy-MM-dd')],
@@ -71,20 +71,24 @@ export function AvailabilityCalendar() {
               <div key={i} className="h-12 bg-gray-200 rounded animate-pulse"></div>
             ))}
           </div>
-        ) : availability?.slots.length === 0 ? (
+        ) : availability?.slots.length === 0 && nextAvailableSlots.length === 0 ? (
           <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg">
             No available slots for this date
           </div>
         ) : (
           <div className="grid grid-cols-3 gap-2 max-h-96 overflow-y-auto">
-            {availability?.slots.map((slot, index) => {
+            {/* Show next available slots if they exist, otherwise show regular availability */}
+            {(nextAvailableSlots.length > 0 ? nextAvailableSlots : availability?.slots || []).map((slot, index) => {
               // Display time in Europe/Berlin timezone
               const startTime = formatInTimeZone(new Date(slot.start), 'Europe/Berlin', 'HH:mm');
 
               return (
                 <button
                   key={index}
-                  onClick={() => setSelectedSlot(slot)}
+                  onClick={() => {
+                    setSelectedSlot(slot);
+                    setNextAvailableSlots([]); // Clear next slots when user selects one
+                  }}
                   className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
                     selectedSlot?.start === slot.start
                       ? 'bg-primary-600 text-white ring-2 ring-primary-300'

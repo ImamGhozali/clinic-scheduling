@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { formatInTimeZone } from 'date-fns-tz';
+import { addMinutes } from 'date-fns';
 import { apiService } from '../services/api';
 import { useAppStore } from '../store/appStore';
 import toast from 'react-hot-toast';
@@ -20,7 +21,7 @@ function generateUUID(): string {
 }
 
 export function BookingForm() {
-  const { selectedService, selectedSlot } = useAppStore();
+  const { selectedService, selectedSlot, setNextAvailableSlots } = useAppStore();
   const queryClient = useQueryClient();
 
   const [formData, setFormData] = useState({
@@ -37,8 +38,30 @@ export function BookingForm() {
   const createAppointmentMutation = useMutation({
     mutationFn: (data: any) => 
       apiService.createAppointment(data, idempotencyKeyRef.current),
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success('Appointment booked successfully!');
+      
+      // Fetch next 3 available slots
+      if (selectedSlot && selectedService) {
+        try {
+          const nextSlotTime = addMinutes(new Date(selectedSlot.start), selectedService.duration_min);
+          const endOfDay = new Date(selectedSlot.start);
+          endOfDay.setHours(23, 59, 59, 999);
+          
+          const availability = await apiService.getAvailability(
+            selectedService.id,
+            nextSlotTime.toISOString(),
+            endOfDay.toISOString(),
+            selectedSlot.doctor_id ? [selectedSlot.doctor_id] : undefined
+          );
+          
+          const slots = availability.slots.slice(0, 3);
+          setNextAvailableSlots(slots);
+        } catch (error) {
+          console.error('Failed to fetch next slots:', error);
+        }
+      }
+      
       setFormData({
         patient_name: '',
         patient_email: '',
