@@ -20,11 +20,13 @@ import { AvailabilityController } from './controllers/availability.controller';
 import { DoctorsController } from './controllers/doctors.controller';
 import { ServicesController } from './controllers/services.controller';
 import { PartitionMaintenanceController } from './controllers/partition-maintenance.controller';
+import { TenantsController } from './controllers/tenants.controller';
 import { AppointmentsService } from './services/appointments.service';
 import { AvailabilityService } from './services/availability.service';
 import { DoctorsService } from './services/doctors.service';
 import { ServicesService } from './services/services.service';
 import { PartitionMaintenanceService } from './services/partition-maintenance.service';
+import { TenantsService } from './services/tenants.service';
 import { TenantGuard } from './guards/tenant.guard';
 import { IdempotencyInterceptor } from './interceptors/idempotency.interceptor';
 import { APP_INTERCEPTOR } from '@nestjs/core';
@@ -91,6 +93,7 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
     DoctorsController,
     ServicesController,
     PartitionMaintenanceController,
+    TenantsController,
   ],
   providers: [
     AppointmentsService,
@@ -98,6 +101,7 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
     DoctorsService,
     ServicesService,
     PartitionMaintenanceService,
+    TenantsService,
     TenantGuard,
     {
       provide: APP_INTERCEPTOR,

@@ -14,8 +14,8 @@
 -- ============================================
 INSERT INTO tenants (id, name, slug, timezone) 
 VALUES 
-(1, 'Downtown Clinic', 'downtown-clinic', 'Europe/Berlin'),
-(2, 'Westside Medical Center', 'westside-medical', 'Europe/Berlin')
+(1, 'Berlin Medical Center', 'berlin-medical', 'Europe/Berlin'),
+(2, 'Munich Family Clinic', 'munich-family', 'Europe/Berlin')
 ON CONFLICT (slug) DO NOTHING;
 
 -- Reset sequence to continue from 3
@@ -26,14 +26,15 @@ SELECT setval('tenants_id_seq', (SELECT MAX(id) FROM tenants));
 -- ============================================
 INSERT INTO doctors (id, tenant_id, name, email, specialty, slot_duration_minutes, is_active) 
 VALUES 
--- Tenant 1: Downtown Clinic
-(101, 1, 'Dr. Sarah Smith', 'sarah@downtown-clinic.com', 'General Practice', 30, true),
-(102, 1, 'Dr. John Doe', 'john@downtown-clinic.com', 'Cardiology', 45, true),
-(103, 1, 'Dr. Emily Johnson', 'emily@downtown-clinic.com', 'Pediatrics', 30, true),
--- Tenant 2: Westside Medical Center
-(104, 2, 'Dr. Michael Chen', 'michael@westside-medical.com', 'Orthopedics', 45, true),
-(105, 2, 'Dr. Lisa Anderson', 'lisa@westside-medical.com', 'Dermatology', 30, true),
-(106, 2, 'Dr. Robert Williams', 'robert@westside-medical.com', 'General Practice', 30, true)
+-- Tenant 1: Berlin Medical Center
+(101, 1, 'Dr. Sarah Schmidt', 'sarah@berlin-medical.com', 'General Practice', 30, true),
+(102, 1, 'Dr. Thomas Müller', 'thomas@berlin-medical.com', 'Cardiology', 45, true),
+(103, 1, 'Dr. Emily Johnson', 'emily@berlin-medical.com', 'Pediatrics', 30, true),
+(104, 1, 'Dr. Michael Weber', 'michael@berlin-medical.com', 'Orthopedics', 45, true),
+-- Tenant 2: Munich Family Clinic
+(105, 2, 'Dr. Anna Fischer', 'anna@munich-family.com', 'General Practice', 30, true),
+(106, 2, 'Dr. Peter Schneider', 'peter@munich-family.com', 'Dermatology', 30, true),
+(107, 2, 'Dr. Lisa Wagner', 'lisa@munich-family.com', 'Pediatrics', 30, true)
 ON CONFLICT DO NOTHING;
 
 SELECT setval('doctors_id_seq', (SELECT MAX(id) FROM doctors));
@@ -43,14 +44,15 @@ SELECT setval('doctors_id_seq', (SELECT MAX(id) FROM doctors));
 -- ============================================
 INSERT INTO patients (id, tenant_id, name, email, phone, date_of_birth) 
 VALUES 
--- Tenant 1: Downtown Clinic
-(201, 1, 'Alice Williams', 'alice@example.com', '+49 123 456 789', '1985-03-15'),
-(202, 1, 'Bob Miller', 'bob@example.com', '+49 987 654 321', '1990-07-22'),
-(203, 1, 'Carol Davis', 'carol@example.com', '+49 555 123 456', '1978-11-30'),
--- Tenant 2: Westside Medical Center
-(204, 2, 'David Thompson', 'david@example.com', '+49 111 222 333', '1982-05-20'),
-(205, 2, 'Emma Wilson', 'emma@example.com', '+49 444 555 666', '1995-09-10'),
-(206, 2, 'Frank Martinez', 'frank@example.com', '+49 777 888 999', '1970-12-05')
+-- Tenant 1: Berlin Medical Center
+(201, 1, 'Max Hoffmann', 'max@example.com', '+49 30 123 4567', '1985-03-15'),
+(202, 1, 'Julia Becker', 'julia@example.com', '+49 30 234 5678', '1990-07-22'),
+(203, 1, 'Hans Zimmermann', 'hans@example.com', '+49 30 345 6789', '1978-11-30'),
+(204, 1, 'Sophie Klein', 'sophie@example.com', '+49 30 456 7890', '2010-05-12'),
+-- Tenant 2: Munich Family Clinic
+(205, 2, 'Lukas Meyer', 'lukas@example.com', '+49 89 111 2222', '1982-05-20'),
+(206, 2, 'Emma Schulz', 'emma@example.com', '+49 89 222 3333', '1995-09-10'),
+(207, 2, 'Felix Koch', 'felix@example.com', '+49 89 333 4444', '2015-12-05')
 ON CONFLICT DO NOTHING;
 
 SELECT setval('patients_id_seq', (SELECT MAX(id) FROM patients));
@@ -60,16 +62,18 @@ SELECT setval('patients_id_seq', (SELECT MAX(id) FROM patients));
 -- ============================================
 INSERT INTO rooms (id, tenant_id, name, location, is_active) 
 VALUES 
--- Tenant 1: Downtown Clinic
-(301, 1, 'Room 101', 'First Floor', true),
-(302, 1, 'Room 102', 'First Floor', true),
-(303, 1, 'Room 201', 'Second Floor', true),
-(304, 1, 'Room 202', 'Second Floor', true),
--- Tenant 2: Westside Medical Center
-(305, 2, 'Exam Room A', 'Ground Floor', true),
-(306, 2, 'Exam Room B', 'Ground Floor', true),
-(307, 2, 'Treatment Room 1', 'First Floor', true),
-(308, 2, 'Treatment Room 2', 'First Floor', true)
+-- Tenant 1: Berlin Medical Center
+(301, 1, 'Exam Room 1', 'Ground Floor', true),
+(302, 1, 'Exam Room 2', 'Ground Floor', true),
+(303, 1, 'Cardiology Suite', 'First Floor', true),
+(304, 1, 'Pediatrics Room', 'First Floor', true),
+(305, 1, 'Orthopedics Room', 'Second Floor', true),
+(306, 1, 'Imaging Room', 'Basement', true),
+-- Tenant 2: Munich Family Clinic
+(307, 2, 'Consultation Room A', 'Ground Floor', true),
+(308, 2, 'Consultation Room B', 'Ground Floor', true),
+(309, 2, 'Treatment Room', 'First Floor', true),
+(310, 2, 'Children''s Room', 'First Floor', true)
 ON CONFLICT DO NOTHING;
 
 SELECT setval('rooms_id_seq', (SELECT MAX(id) FROM rooms));
@@ -79,14 +83,15 @@ SELECT setval('rooms_id_seq', (SELECT MAX(id) FROM rooms));
 -- ============================================
 INSERT INTO devices (id, tenant_id, name, device_type, is_active) 
 VALUES 
--- Tenant 1: Downtown Clinic
+-- Tenant 1: Berlin Medical Center
 (401, 1, 'ECG Machine', 'Cardiology', true),
 (402, 1, 'Ultrasound Scanner', 'Imaging', true),
 (403, 1, 'X-Ray Machine', 'Imaging', true),
--- Tenant 2: Westside Medical Center
-(404, 2, 'MRI Scanner', 'Imaging', true),
-(405, 2, 'CT Scanner', 'Imaging', true),
-(406, 2, 'Dermatoscope', 'Dermatology', true)
+(404, 1, 'Holter Monitor', 'Cardiology', true),
+-- Tenant 2: Munich Family Clinic
+(405, 2, 'Ultrasound Scanner', 'Imaging', true),
+(406, 2, 'Dermatoscope', 'Dermatology', true),
+(407, 2, 'Spirometer', 'Respiratory', true)
 ON CONFLICT DO NOTHING;
 
 SELECT setval('devices_id_seq', (SELECT MAX(id) FROM devices));
@@ -96,338 +101,214 @@ SELECT setval('devices_id_seq', (SELECT MAX(id) FROM devices));
 -- ============================================
 INSERT INTO services (id, tenant_id, name, description, duration_min, buffer_before_min, buffer_after_min, requires_room, requires_device) 
 VALUES 
--- Tenant 1: Downtown Clinic
-(501, 1, 'General Checkup', 'Routine health examination', 30, 5, 5, true, false),
-(502, 1, 'Cardiology Consultation', 'Heart health consultation with ECG', 45, 10, 10, true, true),
-(503, 1, 'Pediatric Visit', 'Child health checkup', 30, 5, 5, true, false),
-(504, 1, 'Ultrasound Examination', 'Medical imaging procedure', 60, 15, 15, true, true),
--- Tenant 2: Westside Medical Center
-(505, 2, 'Orthopedic Consultation', 'Bone and joint examination', 45, 10, 10, true, false),
-(506, 2, 'Skin Examination', 'Dermatology consultation', 30, 5, 5, true, true),
-(507, 2, 'General Checkup', 'Routine health examination', 30, 5, 5, true, false),
-(508, 2, 'MRI Scan', 'Magnetic resonance imaging', 90, 15, 15, true, true)
+-- Tenant 1: Berlin Medical Center
+(501, 1, 'General Checkup', 'Routine health examination', 30, 5, 10, true, false),
+(502, 1, 'Cardiology Consultation', 'Heart health consultation', 45, 10, 15, true, false),
+(503, 1, 'ECG Test', 'Electrocardiogram test', 30, 5, 10, true, true),
+(504, 1, 'Ultrasound Examination', 'Diagnostic ultrasound imaging', 60, 15, 15, true, true),
+(505, 1, 'Pediatric Checkup', 'Child health examination', 30, 5, 10, true, false),
+(506, 1, 'Orthopedic Consultation', 'Bone and joint consultation', 45, 10, 15, true, false),
+(507, 1, 'X-Ray Imaging', 'Diagnostic X-ray', 20, 5, 10, true, true),
+(508, 1, 'Follow-up Visit', 'Post-treatment follow-up', 20, 5, 5, true, false),
+-- Tenant 2: Munich Family Clinic
+(509, 2, 'General Checkup', 'Routine health examination', 30, 5, 10, true, false),
+(510, 2, 'Skin Examination', 'Dermatological examination', 30, 5, 10, true, true),
+(511, 2, 'Pediatric Visit', 'Child health consultation', 30, 5, 10, true, false),
+(512, 2, 'Vaccination', 'Immunization service', 15, 5, 10, true, false),
+(513, 2, 'Ultrasound Scan', 'Diagnostic ultrasound', 45, 10, 15, true, true),
+(514, 2, 'Minor Procedure', 'Small medical procedure', 30, 10, 15, true, false)
 ON CONFLICT DO NOTHING;
 
 SELECT setval('services_id_seq', (SELECT MAX(id) FROM services));
 
+-- ============================================
 -- Link services to required devices
+-- ============================================
 INSERT INTO service_devices (service_id, device_id) 
 VALUES 
--- Tenant 1: Downtown Clinic
-(502, 401),  -- Cardiology needs ECG
-(504, 402),  -- Ultrasound needs scanner
--- Tenant 2: Westside Medical Center
-(506, 406),  -- Skin Examination needs Dermatoscope
-(508, 404)   -- MRI Scan needs MRI Scanner
+-- Tenant 1: Berlin Medical Center
+(503, 401),  -- ECG Test needs ECG Machine
+(504, 402),  -- Ultrasound needs Ultrasound Scanner
+(507, 403),  -- X-Ray needs X-Ray Machine
+-- Tenant 2: Munich Family Clinic
+(510, 406),  -- Skin Examination needs Dermatoscope
+(513, 405)   -- Ultrasound Scan needs Ultrasound Scanner
 ON CONFLICT DO NOTHING;
 
 -- Link doctors to services they can perform
 INSERT INTO doctor_services (doctor_id, service_id) 
 VALUES 
--- Tenant 1: Downtown Clinic
--- Dr. Sarah Smith (General Practice) - can do general checkups and pediatric visits
+-- Tenant 1: Berlin Medical Center
+-- Dr. Sarah Schmidt (General Practice)
 (101, 501),  -- General Checkup
-(101, 503),  -- Pediatric Visit
--- Dr. John Doe (Cardiology) - can do general checkups and cardiology consultations
+(101, 508),  -- Follow-up Visit
+-- Dr. Thomas Müller (Cardiology)
 (102, 501),  -- General Checkup
 (102, 502),  -- Cardiology Consultation
--- Dr. Emily Johnson (Pediatrics) - can do pediatric visits and general checkups
+(102, 503),  -- ECG Test
+(102, 508),  -- Follow-up Visit
+-- Dr. Emily Johnson (Pediatrics)
 (103, 501),  -- General Checkup
-(103, 503),  -- Pediatric Visit
+(103, 505),  -- Pediatric Checkup
 (103, 504),  -- Ultrasound (pediatric imaging)
--- Tenant 2: Westside Medical Center
--- Dr. Michael Chen (Orthopedics) - can do orthopedic consultations and general checkups
-(104, 505),  -- Orthopedic Consultation
-(104, 507),  -- General Checkup
--- Dr. Lisa Anderson (Dermatology) - can do skin examinations and general checkups
-(105, 506),  -- Skin Examination
-(105, 507),  -- General Checkup
--- Dr. Robert Williams (General Practice) - can do general checkups
-(106, 507)   -- General Checkup
+(103, 508),  -- Follow-up Visit
+-- Dr. Michael Weber (Orthopedics)
+(104, 501),  -- General Checkup
+(104, 506),  -- Orthopedic Consultation
+(104, 507),  -- X-Ray Imaging
+(104, 508),  -- Follow-up Visit
+-- Tenant 2: Munich Family Clinic
+-- Dr. Anna Fischer (General Practice)
+(105, 509),  -- General Checkup
+(105, 512),  -- Vaccination
+-- Dr. Peter Schneider (Dermatology)
+(106, 509),  -- General Checkup
+(106, 510),  -- Skin Examination
+(106, 514),  -- Minor Procedure
+-- Dr. Lisa Wagner (Pediatrics)
+(107, 509),  -- General Checkup
+(107, 511),  -- Pediatric Visit
+(107, 512),  -- Vaccination
+(107, 513)   -- Ultrasound Scan
 ON CONFLICT DO NOTHING;
 
 -- ============================================
--- 7. WORKING HOURS (Monday=1 to Friday=5)
+-- 7. WORKING HOURS (Monday=1 to Sunday=7)
 -- ============================================
+-- Realistic doctor schedules with varied hours, including some weekend coverage
 INSERT INTO working_hours (tenant_id, doctor_id, day_of_week, start_time, end_time, is_available) 
 VALUES 
--- Tenant 1: Downtown Clinic
--- Dr. Sarah Smith - Mon-Fri 9-5
-(1, 101, 1, '09:00', '17:00', true),
-(1, 101, 2, '09:00', '17:00', true),
-(1, 101, 3, '09:00', '17:00', true),
-(1, 101, 4, '09:00', '17:00', true),
-(1, 101, 5, '09:00', '17:00', true),
--- Dr. John Doe - Mon-Fri 10-6
-(1, 102, 1, '10:00', '18:00', true),
-(1, 102, 2, '10:00', '18:00', true),
-(1, 102, 3, '10:00', '18:00', true),
-(1, 102, 4, '10:00', '18:00', true),
-(1, 102, 5, '10:00', '18:00', true),
--- Dr. Emily Johnson - Mon-Fri 8-4
-(1, 103, 1, '08:00', '16:00', true),
-(1, 103, 2, '08:00', '16:00', true),
-(1, 103, 3, '08:00', '16:00', true),
-(1, 103, 4, '08:00', '16:00', true),
-(1, 103, 5, '08:00', '16:00', true),
--- Tenant 2: Westside Medical Center
--- Dr. Michael Chen - Mon-Fri 8-4
-(2, 104, 1, '08:00', '16:00', true),
-(2, 104, 2, '08:00', '16:00', true),
-(2, 104, 3, '08:00', '16:00', true),
-(2, 104, 4, '08:00', '16:00', true),
-(2, 104, 5, '08:00', '16:00', true),
--- Dr. Lisa Anderson - Mon-Fri 9-5
-(2, 105, 1, '09:00', '17:00', true),
-(2, 105, 2, '09:00', '17:00', true),
-(2, 105, 3, '09:00', '17:00', true),
-(2, 105, 4, '09:00', '17:00', true),
-(2, 105, 5, '09:00', '17:00', true),
--- Dr. Robert Williams - Mon-Fri 10-6
-(2, 106, 1, '10:00', '18:00', true),
-(2, 106, 2, '10:00', '18:00', true),
-(2, 106, 3, '10:00', '18:00', true),
-(2, 106, 4, '10:00', '18:00', true),
-(2, 106, 5, '10:00', '18:00', true)
+-- Tenant 1: Berlin Medical Center
+-- Dr. Sarah Schmidt (General Practice) - Mon-Fri 08:00-16:00
+(1, 101, 1, '08:00', '16:00', true),
+(1, 101, 2, '08:00', '16:00', true),
+(1, 101, 3, '08:00', '16:00', true),
+(1, 101, 4, '08:00', '16:00', true),
+(1, 101, 5, '08:00', '16:00', true),
+
+-- Dr. Thomas Müller (Cardiology) - Mon-Thu 09:00-17:00, Fri 09:00-14:00
+(1, 102, 1, '09:00', '17:00', true),
+(1, 102, 2, '09:00', '17:00', true),
+(1, 102, 3, '09:00', '17:00', true),
+(1, 102, 4, '09:00', '17:00', true),
+(1, 102, 5, '09:00', '14:00', true),
+
+-- Dr. Emily Johnson (Pediatrics) - Mon-Wed 08:00-18:00, Thu-Fri 08:00-15:00, Sat 09:00-13:00
+(1, 103, 1, '08:00', '18:00', true),
+(1, 103, 2, '08:00', '18:00', true),
+(1, 103, 3, '08:00', '18:00', true),
+(1, 103, 4, '08:00', '15:00', true),
+(1, 103, 5, '08:00', '15:00', true),
+(1, 103, 6, '09:00', '13:00', true),
+
+-- Dr. Michael Weber (Orthopedics) - Mon-Fri 10:00-18:00
+(1, 104, 1, '10:00', '18:00', true),
+(1, 104, 2, '10:00', '18:00', true),
+(1, 104, 3, '10:00', '18:00', true),
+(1, 104, 4, '10:00', '18:00', true),
+(1, 104, 5, '10:00', '18:00', true),
+
+-- Tenant 2: Munich Family Clinic
+-- Dr. Anna Fischer (General Practice) - Mon-Fri 07:30-15:30, Sat 08:00-12:00
+(2, 105, 1, '07:30', '15:30', true),
+(2, 105, 2, '07:30', '15:30', true),
+(2, 105, 3, '07:30', '15:30', true),
+(2, 105, 4, '07:30', '15:30', true),
+(2, 105, 5, '07:30', '15:30', true),
+(2, 105, 6, '08:00', '12:00', true),
+
+-- Dr. Peter Schneider (Dermatology) - Mon-Thu 10:00-19:00, Fri 10:00-16:00
+(2, 106, 1, '10:00', '19:00', true),
+(2, 106, 2, '10:00', '19:00', true),
+(2, 106, 3, '10:00', '19:00', true),
+(2, 106, 4, '10:00', '19:00', true),
+(2, 106, 5, '10:00', '16:00', true),
+
+-- Dr. Lisa Wagner (Pediatrics) - Mon-Fri 08:00-16:00, Sat 09:00-14:00
+(2, 107, 1, '08:00', '16:00', true),
+(2, 107, 2, '08:00', '16:00', true),
+(2, 107, 3, '08:00', '16:00', true),
+(2, 107, 4, '08:00', '16:00', true),
+(2, 107, 5, '08:00', '16:00', true),
+(2, 107, 6, '09:00', '14:00', true)
 ON CONFLICT DO NOTHING;
 
 -- ============================================
 -- 8. SAMPLE APPOINTMENTS (Optional - for testing)
 -- ============================================
--- Note: Using fixed dates across Dec 2025, Jan 2026, Feb 2026 to test 3-partition setup
--- All times are in UTC
+-- Note: Using dates in Jan-Feb 2026 for testing
+-- All times are in UTC (subtract 1 hour from Europe/Berlin local time in winter)
 -- 
--- IMPORTANT: With partitioned tables, appointments must fall within existing partition ranges.
--- The DDL creates partitions for Dec 2025, Jan 2026, Feb 2026. Use create_future_partitions() to add more.
+-- Example: Local time 09:00 Berlin = 08:00 UTC
+-- ============================================
 
--- Dr. Sarah Smith - General checkup on Dec 15, 2025 at 10:00 AM Berlin time (09:00 UTC)
-INSERT INTO appointments (id, tenant_id, doctor_id, patient_id, service_id, room_id, starts_at, ends_at, status) 
+-- Some sample appointments to test conflict detection
+INSERT INTO appointments (
+  id, tenant_id, doctor_id, patient_id, service_id, room_id,
+  starts_at, ends_at, status, notes
+) 
 VALUES 
-(
-    1001,
-    1,
-    101,
-    201,
-    501,
-    301,
-    '2025-12-15 09:00:00+00'::TIMESTAMPTZ,
-    '2025-12-15 09:30:00+00'::TIMESTAMPTZ,
-    'scheduled'
-)
-ON CONFLICT DO NOTHING;
+-- Tenant 1: Berlin Medical Center
+-- Dr. Sarah Schmidt - Monday Jan 6, 2026
+(10001, 1, 101, 201, 501, 301, '2026-01-06 07:00:00+00', '2026-01-06 07:30:00+00', 'scheduled', 'Regular checkup'),
+(10002, 1, 101, 202, 508, 301, '2026-01-06 08:45:00+00', '2026-01-06 09:05:00+00', 'scheduled', 'Follow-up after treatment'),
 
--- Add more sample appointments across different months for testing
-INSERT INTO appointments (tenant_id, doctor_id, patient_id, service_id, room_id, starts_at, ends_at, status) 
-VALUES 
--- Tenant 1: Downtown Clinic
--- Dr. John Doe - Cardiology consultation on Jan 15, 2026 at 3:00 PM Berlin time (14:00 UTC)
-(
-    1,
-    102,
-    202,
-    502,
-    302,
-    '2026-01-15 14:00:00+00'::TIMESTAMPTZ,
-    '2026-01-15 14:45:00+00'::TIMESTAMPTZ,
-    'scheduled'
-),
--- Dr. Emily Johnson - Pediatric visit on Feb 10, 2026 at 10:00 AM Berlin time (09:00 UTC)
-(
-    1,
-    103,
-    203,
-    503,
-    303,
-    '2026-02-10 09:00:00+00'::TIMESTAMPTZ,
-    '2026-02-10 09:30:00+00'::TIMESTAMPTZ,
-    'scheduled'
-),
--- Tenant 2: Westside Medical Center
--- Dr. Michael Chen - Orthopedic consultation on Jan 20, 2026 at 10:00 AM Berlin time (09:00 UTC)
-(
-    2,
-    104,
-    204,
-    505,
-    305,
-    '2026-01-20 09:00:00+00'::TIMESTAMPTZ,
-    '2026-01-20 09:45:00+00'::TIMESTAMPTZ,
-    'scheduled'
-),
--- Dr. Lisa Anderson - Skin examination on Feb 5, 2026 at 2:00 PM Berlin time (13:00 UTC)
-(
-    2,
-    105,
-    205,
-    506,
-    306,
-    '2026-02-05 13:00:00+00'::TIMESTAMPTZ,
-    '2026-02-05 13:30:00+00'::TIMESTAMPTZ,
-    'scheduled'
-)
+-- Dr. Thomas Müller - Tuesday Jan 7, 2026
+(10003, 1, 102, 203, 502, 303, '2026-01-07 08:00:00+00', '2026-01-07 08:45:00+00', 'scheduled', 'Heart consultation'),
+(10004, 1, 102, 201, 503, 303, '2026-01-07 09:50:00+00', '2026-01-07 10:20:00+00', 'scheduled', 'ECG test'),
+
+-- Dr. Emily Johnson - Wednesday Jan 8, 2026
+(10005, 1, 103, 204, 505, 304, '2026-01-08 07:00:00+00', '2026-01-08 07:30:00+00', 'scheduled', 'Child checkup'),
+(10006, 1, 103, 204, 504, 304, '2026-01-08 08:45:00+00', '2026-01-08 09:45:00+00', 'scheduled', 'Pediatric ultrasound'),
+
+-- Dr. Michael Weber - Thursday Jan 9, 2026
+(10007, 1, 104, 202, 506, 305, '2026-01-09 09:00:00+00', '2026-01-09 09:45:00+00', 'scheduled', 'Knee pain consultation'),
+(10008, 1, 104, 203, 507, 305, '2026-01-09 11:10:00+00', '2026-01-09 11:30:00+00', 'scheduled', 'X-ray for back pain'),
+
+-- Tenant 2: Munich Family Clinic
+-- Dr. Anna Fischer - Monday Jan 6, 2026
+(10009, 2, 105, 205, 509, 307, '2026-01-06 06:30:00+00', '2026-01-06 07:00:00+00', 'scheduled', 'Annual checkup'),
+(10010, 2, 105, 206, 512, 307, '2026-01-06 08:15:00+00', '2026-01-06 08:30:00+00', 'scheduled', 'Flu vaccination'),
+
+-- Dr. Peter Schneider - Tuesday Jan 7, 2026
+(10011, 2, 106, 206, 510, 308, '2026-01-07 09:00:00+00', '2026-01-07 09:30:00+00', 'scheduled', 'Skin check'),
+(10012, 2, 106, 205, 514, 309, '2026-01-07 10:45:00+00', '2026-01-07 11:15:00+00', 'scheduled', 'Mole removal'),
+
+-- Dr. Lisa Wagner - Wednesday Jan 8, 2026
+(10013, 2, 107, 207, 511, 310, '2026-01-08 07:00:00+00', '2026-01-08 07:30:00+00', 'scheduled', 'Child wellness visit'),
+(10014, 2, 107, 207, 512, 310, '2026-01-08 08:45:00+00', '2026-01-08 09:00:00+00', 'scheduled', 'Childhood vaccination')
 ON CONFLICT DO NOTHING;
 
 SELECT setval('appointments_id_seq', (SELECT MAX(id) FROM appointments));
 
 -- ============================================
--- 9. RECURRING BREAKS (Daily/Weekly patterns)
+-- VERIFICATION QUERIES
 -- ============================================
--- Add recurring breaks for daily lunch breaks and weekly meetings
--- Times are in local time (will be applied to each day)
+-- Uncomment these to verify the seed data after insertion
 
-INSERT INTO recurring_breaks (tenant_id, resource_type, resource_id, day_of_week, start_time, end_time, reason, is_active, effective_from)
-VALUES 
--- Tenant 1: Downtown Clinic
--- Dr. Sarah Smith - Daily lunch break 12:00-13:00 (Monday-Friday)
-(1, 'doctor', 101, 1, '12:00', '13:00', 'Lunch break', true, '2025-01-01'),
-(1, 'doctor', 101, 2, '12:00', '13:00', 'Lunch break', true, '2025-01-01'),
-(1, 'doctor', 101, 3, '12:00', '13:00', 'Lunch break', true, '2025-01-01'),
-(1, 'doctor', 101, 4, '12:00', '13:00', 'Lunch break', true, '2025-01-01'),
-(1, 'doctor', 101, 5, '12:00', '13:00', 'Lunch break', true, '2025-01-01'),
--- Dr. John Doe - Daily lunch break 13:00-14:00 (Monday-Friday)
-(1, 'doctor', 102, 1, '13:00', '14:00', 'Lunch break', true, '2025-01-01'),
-(1, 'doctor', 102, 2, '13:00', '14:00', 'Lunch break', true, '2025-01-01'),
-(1, 'doctor', 102, 3, '13:00', '14:00', 'Lunch break', true, '2025-01-01'),
-(1, 'doctor', 102, 4, '13:00', '14:00', 'Lunch break', true, '2025-01-01'),
-(1, 'doctor', 102, 5, '13:00', '14:00', 'Lunch break', true, '2025-01-01'),
--- Dr. Emily Johnson - Daily lunch break 12:00-12:30 (Monday-Friday)
-(1, 'doctor', 103, 1, '12:00', '12:30', 'Lunch break', true, '2025-01-01'),
-(1, 'doctor', 103, 2, '12:00', '12:30', 'Lunch break', true, '2025-01-01'),
-(1, 'doctor', 103, 3, '12:00', '12:30', 'Lunch break', true, '2025-01-01'),
-(1, 'doctor', 103, 4, '12:00', '12:30', 'Lunch break', true, '2025-01-01'),
-(1, 'doctor', 103, 5, '12:00', '12:30', 'Lunch break', true, '2025-01-01'),
--- Weekly staff meeting - Every Monday 14:00-15:00 for all doctors
-(1, 'doctor', 101, 1, '14:00', '15:00', 'Weekly staff meeting', true, '2025-01-01'),
-(1, 'doctor', 102, 1, '14:00', '15:00', 'Weekly staff meeting', true, '2025-01-01'),
-(1, 'doctor', 103, 1, '14:00', '15:00', 'Weekly staff meeting', true, '2025-01-01'),
+-- SELECT 'Tenants' as entity, COUNT(*) as count FROM tenants
+-- UNION ALL
+-- SELECT 'Doctors', COUNT(*) FROM doctors
+-- UNION ALL
+-- SELECT 'Patients', COUNT(*) FROM patients
+-- UNION ALL
+-- SELECT 'Rooms', COUNT(*) FROM rooms
+-- UNION ALL
+-- SELECT 'Devices', COUNT(*) FROM devices
+-- UNION ALL
+-- SELECT 'Services', COUNT(*) FROM services
+-- UNION ALL
+-- SELECT 'Working Hours', COUNT(*) FROM working_hours
+-- UNION ALL
+-- SELECT 'Appointments', COUNT(*) FROM appointments;
 
--- Tenant 2: Westside Medical Center
--- Dr. Michael Chen - Daily lunch break 12:00-13:00 (Monday-Friday)
-(2, 'doctor', 104, 1, '12:00', '13:00', 'Lunch break', true, '2025-01-01'),
-(2, 'doctor', 104, 2, '12:00', '13:00', 'Lunch break', true, '2025-01-01'),
-(2, 'doctor', 104, 3, '12:00', '13:00', 'Lunch break', true, '2025-01-01'),
-(2, 'doctor', 104, 4, '12:00', '13:00', 'Lunch break', true, '2025-01-01'),
-(2, 'doctor', 104, 5, '12:00', '13:00', 'Lunch break', true, '2025-01-01'),
--- Dr. Lisa Anderson - Daily lunch break 12:30-13:30 (Monday-Friday)
-(2, 'doctor', 105, 1, '12:30', '13:30', 'Lunch break', true, '2025-01-01'),
-(2, 'doctor', 105, 2, '12:30', '13:30', 'Lunch break', true, '2025-01-01'),
-(2, 'doctor', 105, 3, '12:30', '13:30', 'Lunch break', true, '2025-01-01'),
-(2, 'doctor', 105, 4, '12:30', '13:30', 'Lunch break', true, '2025-01-01'),
-(2, 'doctor', 105, 5, '12:30', '13:30', 'Lunch break', true, '2025-01-01'),
--- Dr. Robert Williams - Daily lunch break 13:00-14:00 (Monday-Friday)
-(2, 'doctor', 106, 1, '13:00', '14:00', 'Lunch break', true, '2025-01-01'),
-(2, 'doctor', 106, 2, '13:00', '14:00', 'Lunch break', true, '2025-01-01'),
-(2, 'doctor', 106, 3, '13:00', '14:00', 'Lunch break', true, '2025-01-01'),
-(2, 'doctor', 106, 4, '13:00', '14:00', 'Lunch break', true, '2025-01-01'),
-(2, 'doctor', 106, 5, '13:00', '14:00', 'Lunch break', true, '2025-01-01'),
--- Weekly team meeting - Every Wednesday 15:00-16:00 for all doctors
-(2, 'doctor', 104, 3, '15:00', '16:00', 'Weekly team meeting', true, '2025-01-01'),
-(2, 'doctor', 105, 3, '15:00', '16:00', 'Weekly team meeting', true, '2025-01-01'),
-(2, 'doctor', 106, 3, '15:00', '16:00', 'Weekly team meeting', true, '2025-01-01')
-ON CONFLICT DO NOTHING;
-
--- ============================================
--- 10. BREAKS (One-time events)
--- ============================================
--- Add one-time breaks for specific dates: vacations, maintenance, calibration
--- All times are in UTC (Berlin time - 1 hour during winter)
-
-INSERT INTO breaks (tenant_id, resource_type, resource_id, starts_at, ends_at, reason)
-VALUES 
--- Tenant 1: Downtown Clinic
--- Doctor one-time breaks (vacation, conferences, etc.)
-(1, 'doctor', 101, '2025-12-25 00:00:00+00'::TIMESTAMPTZ, '2025-12-26 00:00:00+00'::TIMESTAMPTZ, 'Christmas vacation'),
-(1, 'doctor', 102, '2026-01-20 08:00:00+00'::TIMESTAMPTZ, '2026-01-20 17:00:00+00'::TIMESTAMPTZ, 'Attending cardiology conference'),
-(1, 'doctor', 103, '2026-02-14 13:00:00+00'::TIMESTAMPTZ, '2026-02-14 15:00:00+00'::TIMESTAMPTZ, 'Pediatric training session'),
--- Room maintenance windows (one-time scheduled maintenance)
-(1, 'room', 301, '2025-12-15 13:00:00+00'::TIMESTAMPTZ, '2025-12-15 14:00:00+00'::TIMESTAMPTZ, 'Deep cleaning and maintenance'),
-(1, 'room', 302, '2026-01-15 15:00:00+00'::TIMESTAMPTZ, '2026-01-15 16:00:00+00'::TIMESTAMPTZ, 'Equipment upgrade'),
-(1, 'room', 303, '2026-02-05 08:00:00+00'::TIMESTAMPTZ, '2026-02-05 12:00:00+00'::TIMESTAMPTZ, 'HVAC system repair'),
--- Device calibration and maintenance (one-time scheduled events)
-(1, 'device', 401, '2026-01-15 09:00:00+00'::TIMESTAMPTZ, '2026-01-15 10:00:00+00'::TIMESTAMPTZ, 'ECG machine calibration'),
-(1, 'device', 402, '2026-02-10 14:00:00+00'::TIMESTAMPTZ, '2026-02-10 15:00:00+00'::TIMESTAMPTZ, 'Ultrasound scanner maintenance'),
-(1, 'device', 403, '2025-12-20 10:00:00+00'::TIMESTAMPTZ, '2025-12-20 11:00:00+00'::TIMESTAMPTZ, 'X-Ray machine annual inspection'),
-
--- Tenant 2: Westside Medical Center
--- Doctor one-time breaks (vacation, conferences, etc.)
-(2, 'doctor', 104, '2026-01-10 00:00:00+00'::TIMESTAMPTZ, '2026-01-17 00:00:00+00'::TIMESTAMPTZ, 'Winter vacation'),
-(2, 'doctor', 105, '2026-02-20 08:00:00+00'::TIMESTAMPTZ, '2026-02-20 17:00:00+00'::TIMESTAMPTZ, 'Dermatology conference'),
-(2, 'doctor', 106, '2025-12-24 00:00:00+00'::TIMESTAMPTZ, '2025-12-27 00:00:00+00'::TIMESTAMPTZ, 'Holiday break'),
--- Room maintenance windows (one-time scheduled maintenance)
-(2, 'room', 305, '2026-01-25 09:00:00+00'::TIMESTAMPTZ, '2026-01-25 12:00:00+00'::TIMESTAMPTZ, 'Flooring replacement'),
-(2, 'room', 306, '2026-02-15 14:00:00+00'::TIMESTAMPTZ, '2026-02-15 16:00:00+00'::TIMESTAMPTZ, 'Equipment installation'),
-(2, 'room', 307, '2025-12-30 08:00:00+00'::TIMESTAMPTZ, '2025-12-30 17:00:00+00'::TIMESTAMPTZ, 'Year-end deep cleaning'),
--- Device calibration and maintenance (one-time scheduled events)
-(2, 'device', 404, '2026-01-18 10:00:00+00'::TIMESTAMPTZ, '2026-01-18 14:00:00+00'::TIMESTAMPTZ, 'MRI scanner calibration'),
-(2, 'device', 405, '2026-02-08 09:00:00+00'::TIMESTAMPTZ, '2026-02-08 11:00:00+00'::TIMESTAMPTZ, 'CT scanner maintenance'),
-(2, 'device', 406, '2026-01-05 15:00:00+00'::TIMESTAMPTZ, '2026-01-05 16:00:00+00'::TIMESTAMPTZ, 'Dermatoscope calibration')
-ON CONFLICT DO NOTHING;
-
--- ============================================
--- SEED DATA COMPLETE
--- ============================================
--- 
--- Summary:
--- - 2 tenants: downtown-clinic (ID: 1), westside-medical (ID: 2)
--- - 6 doctors with different specialties (IDs: 101-106)
--- - 6 patients (IDs: 201-206)
--- - 8 rooms (IDs: 301-308)
--- - 6 devices (IDs: 401-406)
--- - 8 services (IDs: 501-508)
--- - Doctor-service relationships (which doctors can perform which services)
--- - Working hours for all doctors (Mon-Fri)
--- - 5 sample appointments (IDs: 1001+)
--- - 36 recurring breaks (daily lunch breaks, weekly staff meetings)
--- - 18 one-time breaks (vacations, room maintenance, device calibration)
--- 
--- ID Ranges:
--- - Tenants: 1-99
--- - Doctors: 100-199
--- - Patients: 200-299
--- - Rooms: 300-399
--- - Devices: 400-499
--- - Services: 500-599
--- - Appointments: 1000+
--- 
--- Doctor-Service Mapping:
--- Tenant 1 (Downtown Clinic):
--- - Dr. Sarah Smith (General Practice): General Checkup, Pediatric Visit
--- - Dr. John Doe (Cardiology): General Checkup, Cardiology Consultation
--- - Dr. Emily Johnson (Pediatrics): General Checkup, Pediatric Visit, Ultrasound
--- Tenant 2 (Westside Medical):
--- - Dr. Michael Chen (Orthopedics): Orthopedic Consultation, General Checkup
--- - Dr. Lisa Anderson (Dermatology): Skin Examination, General Checkup
--- - Dr. Robert Williams (General Practice): General Checkup
--- 
--- To test:
--- 1. Use tenant ID or slug in X-Tenant-Id header (1 or 'downtown-clinic', 2 or 'westside-medical')
--- 2. Test GET /api/services endpoint
--- 3. Test GET /api/doctors?service_id={id} to get qualified doctors
--- 4. Test GET /api/availability with service_id
--- 5. Test POST /api/appointments to create bookings
--- 6. Verify tenant isolation (tenant 1 cannot see tenant 2 data)
--- ============================================
-
-SELECT 
-    'Seed data inserted successfully!' as status,
-    (SELECT COUNT(*) FROM tenants) as tenants,
-    (SELECT COUNT(*) FROM doctors) as doctors,
-    (SELECT COUNT(*) FROM patients) as patients,
-    (SELECT COUNT(*) FROM rooms) as rooms,
-    (SELECT COUNT(*) FROM devices) as devices,
-    (SELECT COUNT(*) FROM services) as services,
-    (SELECT COUNT(*) FROM working_hours) as working_hours,
-    (SELECT COUNT(*) FROM appointments) as appointments,
-    (SELECT COUNT(*) FROM recurring_breaks) as recurring_breaks,
-    (SELECT COUNT(*) FROM breaks) as one_time_breaks;
-
--- Show partition distribution
-SELECT 
-    'Partition Distribution:' as info;
-    
-SELECT 
-    tableoid::regclass AS partition,
-    COUNT(*) AS appointments
-FROM appointments
-GROUP BY tableoid
-ORDER BY partition;
+-- View doctor schedules
+-- SELECT 
+--   d.name as doctor,
+--   d.specialty,
+--   wh.day_of_week,
+--   wh.start_time,
+--   wh.end_time
+-- FROM doctors d
+-- JOIN working_hours wh ON d.id = wh.doctor_id
+-- ORDER BY d.name, wh.day_of_week;

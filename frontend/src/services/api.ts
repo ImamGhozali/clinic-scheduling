@@ -1,5 +1,6 @@
 import axios, { AxiosInstance } from 'axios';
 import type {
+  Tenant,
   Doctor,
   Service,
   Appointment,
@@ -34,6 +35,15 @@ class ApiService {
 
   getTenant() {
     return this.tenantId;
+  }
+
+  // ============================================
+  // Tenants
+  // ============================================
+
+  async getTenants(): Promise<Tenant[]> {
+    const response = await this.api.get<Tenant[]>('/api/tenants');
+    return response.data;
   }
 
   // ============================================

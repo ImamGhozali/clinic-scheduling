@@ -1,3 +1,13 @@
+export interface Tenant {
+  id: number;
+  name: string;
+  slug: string;
+  timezone: string;
+  settings: Record<string, any>;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Doctor {
   id: number;
   tenant_id: number;

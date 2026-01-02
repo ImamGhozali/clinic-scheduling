@@ -4,9 +4,17 @@ import { AvailabilityCalendar } from '../components/AvailabilityCalendar';
 import { BookingForm } from '../components/BookingForm';
 import { useAppStore } from '../store/appStore';
 import { Building2 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { apiService } from '../services/api';
 
 export function HomePage() {
   const { tenantId, setTenantId } = useAppStore();
+  
+  // Fetch tenants from the database
+  const { data: tenants, isLoading: tenantsLoading } = useQuery({
+    queryKey: ['tenants'],
+    queryFn: () => apiService.getTenants(),
+  });
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -33,9 +41,19 @@ export function HomePage() {
                 value={tenantId}
                 onChange={(e) => setTenantId(Number(e.target.value))}
                 className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                disabled={tenantsLoading}
               >
-                <option value={1}>Downtown Clinic</option>
-                <option value={2}>Westside Medical</option>
+                {tenantsLoading ? (
+                  <option>Loading...</option>
+                ) : tenants && tenants.length > 0 ? (
+                  tenants.map((tenant) => (
+                    <option key={tenant.id} value={tenant.id}>
+                      {tenant.name}
+                    </option>
+                  ))
+                ) : (
+                  <option>No clinics available</option>
+                )}
               </select>
             </div>
           </div>
