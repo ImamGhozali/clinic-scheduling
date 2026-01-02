@@ -90,7 +90,9 @@ export function DoctorList() {
                   <p className="text-sm text-gray-600">{doctor.specialty}</p>
                 )}
                 <p className="text-xs text-gray-500 mt-1">
-                  {doctor.slot_duration_minutes} min appointments
+                  {doctor.slot_duration_minutes 
+                    ? `${doctor.slot_duration_minutes}-minute time slots` 
+                    : 'View availability'}
                 </p>
               </div>
             </div>
