@@ -11,10 +11,18 @@ export function AvailabilityCalendar() {
   const { data: availability, isLoading } = useQuery({
     queryKey: ['availability', tenantId, selectedService?.id, selectedDoctor?.id, format(selectedDate, 'yyyy-MM-dd')],
     queryFn: () => {
-      // Convert date to ISO 8601 datetime range in UTC
+      // Get the date in Europe/Berlin timezone to avoid local timezone issues
+      // This ensures we search for the correct day regardless of user's timezone
+      const timezone = 'Europe/Berlin';
       const dateStr = format(selectedDate, 'yyyy-MM-dd');
-      const from = `${dateStr}T00:00:00Z`;
-      const to = `${dateStr}T23:59:59Z`;
+      
+      // Create start and end times in Berlin timezone, then convert to UTC for API
+      const startOfDay = new Date(`${dateStr}T00:00:00`);
+      const endOfDay = new Date(`${dateStr}T23:59:59`);
+      
+      // Format as ISO strings (these will be in UTC)
+      const from = formatInTimeZone(startOfDay, timezone, "yyyy-MM-dd'T'00:00:00xxx");
+      const to = formatInTimeZone(endOfDay, timezone, "yyyy-MM-dd'T'23:59:59xxx");
       
       return apiService.getAvailability(
         selectedService!.id,
