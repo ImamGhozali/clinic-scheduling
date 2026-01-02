@@ -268,18 +268,26 @@ export class AvailabilityService {
         
         if (!workingHours) continue;
 
-        // Check if slot fits in working hours (inline check, no function call)
+        // Check if slot fits in working hours (timezone-aware)
+        // Working hours are stored in local time (Europe/Berlin), so we need to convert
+        const timezone = 'Europe/Berlin';
         const slotEnd = addMinutes(currentTime, totalDuration);
+        
+        // Convert UTC time to local timezone for comparison
+        const localTime = utcToZonedTime(currentTime, timezone);
+        const localSlotEnd = utcToZonedTime(slotEnd, timezone);
+        
         const [startHour, startMin] = workingHours.startTime.split(':').map(Number);
         const [endHour, endMin] = workingHours.endTime.split(':').map(Number);
 
-        const workStart = new Date(currentTime);
+        // Create working hours boundaries in local time
+        const workStart = new Date(localTime);
         workStart.setHours(startHour, startMin, 0, 0);
 
-        const workEnd = new Date(currentTime);
+        const workEnd = new Date(localTime);
         workEnd.setHours(endHour, endMin, 0, 0);
 
-        const isWithinWorkingHours = currentTime >= workStart && slotEnd <= workEnd;
+        const isWithinWorkingHours = localTime >= workStart && localSlotEnd <= workEnd;
         if (!isWithinWorkingHours) continue;
 
         // Check each room (find first available room, not all rooms)
@@ -366,16 +374,21 @@ export class AvailabilityService {
     if (!workingHours) return false;
 
     // Parse working hours time strings (HH:MM format)
+    // Working hours are stored in local time, so convert UTC to local for comparison
+    const timezone = 'Europe/Berlin';
+    const localSlotStart = utcToZonedTime(slotStart, timezone);
+    const localSlotEnd = utcToZonedTime(slotEnd, timezone);
+    
     const [startHour, startMin] = workingHours.startTime.split(':').map(Number);
     const [endHour, endMin] = workingHours.endTime.split(':').map(Number);
 
-    const workStart = new Date(slotStart);
+    const workStart = new Date(localSlotStart);
     workStart.setHours(startHour, startMin, 0, 0);
 
-    const workEnd = new Date(slotStart);
+    const workEnd = new Date(localSlotStart);
     workEnd.setHours(endHour, endMin, 0, 0);
 
-    return slotStart >= workStart && slotEnd <= workEnd;
+    return localSlotStart >= workStart && localSlotEnd <= workEnd;
   }
 
   /**
