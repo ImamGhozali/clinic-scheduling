@@ -44,8 +44,12 @@ export function BookingForm() {
       // Fetch next 3 available slots
       if (selectedSlot && selectedService) {
         try {
-          const nextSlotTime = addMinutes(new Date(selectedSlot.start), selectedService.duration_min);
-          const endOfDay = new Date(selectedSlot.start);
+          // Calculate next available time by adding total duration (including buffers)
+          const nextSlotTime = addMinutes(
+            new Date(selectedSlot.start), 
+            selectedService.duration_min + selectedService.buffer_before_min + selectedService.buffer_after_min
+          );
+          const endOfDay = new Date(nextSlotTime);
           endOfDay.setHours(23, 59, 59, 999);
           
           const availability = await apiService.getAvailability(

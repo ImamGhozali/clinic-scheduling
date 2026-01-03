@@ -282,6 +282,121 @@ ON CONFLICT DO NOTHING;
 SELECT setval('appointments_id_seq', (SELECT MAX(id) FROM appointments));
 
 -- ============================================
+-- 9. RECURRING BREAKS (Regular breaks that repeat)
+-- ============================================
+-- day_of_week: NULL = daily, 0 = Sunday, 1 = Monday, 2 = Tuesday, ..., 6 = Saturday
+INSERT INTO recurring_breaks (
+  id, tenant_id, resource_type, resource_id,
+  day_of_week, start_time, end_time, reason, is_active
+)
+VALUES
+-- Tenant 1: Berlin Medical Center
+-- Dr. Sarah Schmidt - Daily lunch break
+(9001, 1, 'doctor', 101, NULL, '12:00', '13:00', 'Lunch break', true),
+
+-- Dr. Thomas Müller - Daily lunch break
+(9002, 1, 'doctor', 102, NULL, '12:30', '13:30', 'Lunch break', true),
+
+-- Dr. Emily Johnson - Daily lunch break
+(9003, 1, 'doctor', 103, NULL, '12:00', '13:00', 'Lunch break', true),
+-- Dr. Emily Johnson - Wednesday afternoon admin time
+(9004, 1, 'doctor', 103, 3, '15:00', '16:00', 'Administrative duties', true),
+
+-- Dr. Michael Weber - Daily lunch break
+(9005, 1, 'doctor', 104, NULL, '13:00', '14:00', 'Lunch break', true),
+-- Dr. Michael Weber - Friday morning team meeting
+(9006, 1, 'doctor', 104, 5, '10:00', '11:00', 'Weekly team meeting', true),
+
+-- Tenant 2: Munich Family Clinic
+-- Dr. Anna Fischer - Daily lunch break
+(9007, 2, 'doctor', 105, NULL, '11:30', '12:30', 'Lunch break', true),
+
+-- Dr. Peter Schneider - Daily lunch break
+(9008, 2, 'doctor', 106, NULL, '13:00', '14:00', 'Lunch break', true),
+-- Dr. Peter Schneider - Monday morning staff meeting
+(9009, 2, 'doctor', 106, 1, '10:00', '10:30', 'Staff meeting', true),
+
+-- Dr. Lisa Wagner - Daily lunch break
+(9010, 2, 'doctor', 107, NULL, '12:00', '13:00', 'Lunch break', true),
+
+-- Room maintenance breaks
+-- Cardiology Suite - Daily cleaning
+(9011, 1, 'room', 303, NULL, '13:00', '13:30', 'Daily cleaning and sterilization', true),
+-- Imaging Room - Weekly deep cleaning on Sundays
+(9012, 1, 'room', 306, 0, '10:00', '14:00', 'Weekly deep cleaning', true),
+
+-- Device maintenance breaks
+-- Ultrasound Scanner (Berlin) - Weekly calibration on Mondays
+(9013, 1, 'device', 402, 1, '08:00', '09:00', 'Weekly calibration and maintenance', true),
+-- X-Ray Machine - Weekly quality assurance on Mondays
+(9014, 1, 'device', 403, 1, '07:00', '08:00', 'Quality assurance check', true)
+
+ON CONFLICT DO NOTHING;
+
+SELECT setval('recurring_breaks_id_seq', (SELECT MAX(id) FROM recurring_breaks));
+
+-- ============================================
+-- 10. ONE-TIME BREAKS (Specific date/time breaks)
+-- ============================================
+-- For vacations, special events, equipment repairs, etc.
+INSERT INTO breaks (
+  id, tenant_id, resource_type, resource_id,
+  starts_at, ends_at, reason
+)
+VALUES
+-- Tenant 1: Berlin Medical Center
+-- Dr. Sarah Schmidt - Vacation Jan 13-17, 2026
+(8001, 1, 'doctor', 101, '2026-01-13 07:00:00+00', '2026-01-17 23:59:59+00', 'Annual leave'),
+
+-- Dr. Thomas Müller - Conference attendance Feb 10-12, 2026
+(8002, 1, 'doctor', 102, '2026-02-10 08:00:00+00', '2026-02-12 17:00:00+00', 'Medical conference in Frankfurt'),
+
+-- Dr. Emily Johnson - Training day Jan 15, 2026
+(8003, 1, 'doctor', 103, '2026-01-15 08:00:00+00', '2026-01-15 17:00:00+00', 'Pediatric emergency training'),
+
+-- Dr. Michael Weber - Surgery at partner hospital Jan 9, 2026 afternoon
+(8004, 1, 'doctor', 104, '2026-01-09 13:00:00+00', '2026-01-09 18:00:00+00', 'Surgery at partner hospital'),
+
+-- Equipment maintenance
+-- Ultrasound Scanner - Repair Jan 10, 2026
+(8005, 1, 'device', 402, '2026-01-10 09:00:00+00', '2026-01-10 12:00:00+00', 'Scheduled maintenance and software update'),
+
+-- X-Ray Machine - Calibration Jan 8, 2026
+(8006, 1, 'device', 403, '2026-01-08 16:00:00+00', '2026-01-08 18:00:00+00', 'Annual calibration'),
+
+-- Room unavailability
+-- Cardiology Suite - Deep cleaning Jan 11, 2026
+(8007, 1, 'room', 303, '2026-01-11 08:00:00+00', '2026-01-11 10:00:00+00', 'Deep cleaning and repainting'),
+
+-- Tenant 2: Munich Family Clinic
+-- Dr. Anna Fischer - Family emergency Jan 20, 2026
+(8008, 2, 'doctor', 105, '2026-01-20 06:30:00+00', '2026-01-20 14:30:00+00', 'Personal leave'),
+
+-- Dr. Peter Schneider - Conference Jan 28-29, 2026
+(8009, 2, 'doctor', 106, '2026-01-28 09:00:00+00', '2026-01-29 18:00:00+00', 'Dermatology conference in Berlin'),
+
+-- Dr. Lisa Wagner - Sick leave Jan 14, 2026
+(8010, 2, 'doctor', 107, '2026-01-14 07:00:00+00', '2026-01-14 16:00:00+00', 'Sick leave'),
+
+-- Equipment maintenance
+-- Ultrasound Scanner (Munich) - Repair Feb 5, 2026
+(8011, 2, 'device', 405, '2026-02-05 09:00:00+00', '2026-02-05 14:00:00+00', 'Sensor replacement'),
+
+-- Dermatoscope - Calibration Jan 22, 2026
+(8012, 2, 'device', 406, '2026-01-22 10:00:00+00', '2026-01-22 11:00:00+00', 'Routine calibration'),
+
+-- Room unavailability
+-- Treatment Room - Renovation Feb 3-7, 2026
+(8013, 2, 'room', 309, '2026-02-03 00:00:00+00', '2026-02-07 23:59:59+00', 'Room renovation and equipment upgrade'),
+
+-- Children''s Room - Painting Jan 16, 2026
+(8014, 2, 'room', 310, '2026-01-16 07:00:00+00', '2026-01-16 12:00:00+00', 'Wall painting and decoration')
+
+ON CONFLICT DO NOTHING;
+
+SELECT setval('breaks_id_seq', (SELECT MAX(id) FROM breaks));
+
+-- ============================================
 -- VERIFICATION QUERIES
 -- ============================================
 -- Uncomment these to verify the seed data after insertion
@@ -300,7 +415,11 @@ SELECT setval('appointments_id_seq', (SELECT MAX(id) FROM appointments));
 -- UNION ALL
 -- SELECT 'Working Hours', COUNT(*) FROM working_hours
 -- UNION ALL
--- SELECT 'Appointments', COUNT(*) FROM appointments;
+-- SELECT 'Appointments', COUNT(*) FROM appointments
+-- UNION ALL
+-- SELECT 'Recurring Breaks', COUNT(*) FROM recurring_breaks
+-- UNION ALL
+-- SELECT 'One-time Breaks', COUNT(*) FROM breaks;
 
 -- View doctor schedules
 -- SELECT 
