@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
-import { formatInTimeZone } from 'date-fns-tz';
+import { formatInTimeZone, zonedTimeToUtc } from 'date-fns-tz';
 import { apiService } from '../services/api';
 import { useAppStore } from '../store/appStore';
 import { Calendar, Clock } from 'lucide-react';
@@ -16,18 +16,15 @@ export function AvailabilityCalendar() {
       const timezone = 'Europe/Berlin';
       const dateStr = format(selectedDate, 'yyyy-MM-dd');
       
-      // Create start and end times in Berlin timezone, then convert to UTC for API
-      const startOfDay = new Date(`${dateStr}T00:00:00`);
-      const endOfDay = new Date(`${dateStr}T23:59:59`);
-      
-      // Format as ISO strings (these will be in UTC)
-      const from = formatInTimeZone(startOfDay, timezone, "yyyy-MM-dd'T'00:00:00xxx");
-      const to = formatInTimeZone(endOfDay, timezone, "yyyy-MM-dd'T'23:59:59xxx");
+      // Parse date string AS IF it's in Berlin timezone, then convert to UTC
+      // This prevents issues when user's browser is in a different timezone
+      const startOfDay = zonedTimeToUtc(`${dateStr} 00:00:00`, timezone);
+      const endOfDay = zonedTimeToUtc(`${dateStr} 23:59:59`, timezone);
       
       return apiService.getAvailability(
         selectedService!.id,
-        from,
-        to,
+        startOfDay.toISOString(),
+        endOfDay.toISOString(),
         selectedDoctor ? [selectedDoctor.id] : undefined
       );
     },
