@@ -250,9 +250,6 @@ curl "http://localhost:3000/api/availability?service_id=501&from=2025-12-20T08:0
   -H "X-Tenant-Id: 1"
 ```
 
-## 🌐 Deployment
-
-### Free Hosting Options
 
 #### Option 1: Railway + Vercel + Neon (Recommended)
 
