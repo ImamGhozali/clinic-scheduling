@@ -319,20 +319,7 @@ DATABASE_URL=postgresql://user:password@host:5432/database
 ```env
 VITE_API_URL=https://your-backend-url.com
 ```
-
-### Production Checklist
-
-- [ ] Set `NODE_ENV=production`
-- [ ] Use strong database password
-- [ ] Enable SSL for database connection
-- [ ] Configure CORS for your frontend domain
-- [ ] Set up error monitoring (e.g., Sentry)
-- [ ] Enable database backups
-- [ ] Set up health check monitoring
-- [ ] Review and optimize database indexes
-- [ ] Enable rate limiting on API
-- [ ] Set up CI/CD pipeline
-
+,
 ## ⚡ Performance
 
 ### Query Performance
