@@ -9,6 +9,13 @@
   "moduleNameMapper": {
     "^src/(.*)$": "<rootDir>/../src/$1"
   },
-  "testTimeout": 30000
+  "testTimeout": 30000,
+  "globals": {
+    "ts-jest": {
+      "tsconfig": {
+        "types": ["jest", "node"]
+      }
+    }
+  }
 }
 
