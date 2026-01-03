@@ -345,58 +345,10 @@ npm test
 - [db/ddl.sql](./db/ddl.sql) - Complete database schema with rationale
 - [db/seed.sql](./db/seed.sql) - Test data for manual QA
 
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests
-5. Submit a pull request
 
 ## 📄 License
 
-MIT License - feel free to use this project for your interview assessment!
-
-## 🆘 Troubleshooting
-
-### Database connection failed
-```bash
-# Check if PostgreSQL is running
-docker-compose ps
-
-# View database logs
-docker-compose logs postgres
-
-# Restart database
-docker-compose restart postgres
-```
-
-### Frontend can't connect to backend
-```bash
-# Check backend is running
-curl http://localhost:3000/health
-
-# Verify CORS settings in backend
-# Check VITE_API_URL in frontend/.env
-```
-
-### Port already in use
-```bash
-# Find process using port
-lsof -i :3000  # Backend
-lsof -i :5173  # Frontend
-lsof -i :5432  # PostgreSQL
-
-# Kill process
-kill -9 <PID>
-```
-
-## 📞 Support
-
-For questions or issues:
-1. Check the [API Documentation](http://localhost:3000/docs)
-2. Review the troubleshooting section
-3. Check Docker logs: `docker-compose logs`
+MIT License - feel free to use this project!
 
 ---
 
