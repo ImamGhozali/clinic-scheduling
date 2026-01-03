@@ -167,18 +167,42 @@ curl -H "X-Tenant-Id: 1" \
 ```
 
 **Test Tenants:**
-- ID: `1` - Downtown Clinic
-- ID: `2` - Westside Medical (if seeded)
+- ID: `1` - Berlin Medical Center
+- ID: `2` - Munich Family Clinic
 
-#### Key Endpoints
+#### API Endpoints
 
+**Tenants**
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `GET` | `/api/doctors` | List all doctors |
-| `GET` | `/api/doctors/:id/schedule` | Get doctor's calendar |
-| `GET` | `/api/availability` | Search available slots |
-| `POST` | `/api/appointments` | Create booking |
-| `DELETE` | `/api/appointments/:id` | Cancel booking |
+| `GET` | `/api/tenants` | List all clinics/tenants |
+
+**Doctors**
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/doctors` | List all doctors for tenant |
+| `GET` | `/api/doctors/:id` | Get doctor details |
+| `GET` | `/api/doctors/:id/schedule` | Get doctor's calendar view |
+
+**Services**
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/services` | List all services for tenant |
+| `GET` | `/api/services/:id` | Get service details |
+
+**Availability**
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/availability` | Search available time slots |
+
+**Appointments**
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/appointments` | Create new appointment |
+| `GET` | `/api/appointments` | List appointments for tenant |
+| `GET` | `/api/appointments/:id` | Get appointment details |
+| `PATCH` | `/api/appointments/:id` | Update appointment |
+| `DELETE` | `/api/appointments/:id` | Cancel appointment |
 
 #### Example: Create Appointment
 
