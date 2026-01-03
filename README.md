@@ -250,59 +250,6 @@ curl "http://localhost:3000/api/availability?service_id=501&from=2025-12-20T08:0
   -H "X-Tenant-Id: 1"
 ```
 
-
-#### Option 1: Railway + Vercel + Neon (Recommended)
-
-**Backend (Railway.app)**
-1. Create account at [railway.app](https://railway.app)
-2. Click "New Project" → "Deploy from GitHub"
-3. Select your repository
-4. Set root directory: `/backend`
-5. Add environment variables:
-   ```
-   DATABASE_URL=<neon-connection-string>
-   NODE_ENV=production
-   ```
-
-**Database (Neon.tech)**
-1. Create account at [neon.tech](https://neon.tech)
-2. Create new project
-3. Copy connection string
-4. Run DDL and seed data:
-   ```bash
-   psql <neon-connection-string> -f db/ddl.sql
-   psql <neon-connection-string> -f db/seed.sql
-   ```
-
-**Frontend (Vercel)**
-1. Create account at [vercel.com](https://vercel.com)
-2. Import your repository
-3. Set root directory: `/frontend`
-4. Add environment variable:
-   ```
-   VITE_API_URL=https://your-app.railway.app
-   ```
-5. Deploy!
-
-#### Option 2: Render.com (All-in-One)
-
-**Database**
-1. Create PostgreSQL database on Render
-2. Note the internal connection string
-
-**Backend**
-1. Create new Web Service
-2. Connect repository, set root: `/backend`
-3. Build command: `npm install && npm run build`
-4. Start command: `npm start`
-5. Add environment variables
-
-**Frontend**
-1. Create new Static Site
-2. Connect repository, set root: `/frontend`
-3. Build command: `npm run build`
-4. Publish directory: `dist`
-
 ### Environment Variables
 
 #### Backend (.env)
