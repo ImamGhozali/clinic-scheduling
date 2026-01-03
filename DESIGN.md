@@ -448,9 +448,6 @@ Comprehensive end-to-end tests covering critical functionality:
 - ✅ Prevents booking with doctor from different tenant
 - ✅ Isolates availability search by tenant
 
-**Smart API Features**
-- ✅ Auto-calculates `ends_at` from service duration
-- ✅ Validates provided `ends_at` matches service duration
 
 ### Running Tests
 
@@ -781,7 +778,6 @@ This system demonstrates:
 - **Correct data modeling** with proper normalization and indexing
 - **Robust conflict detection** using database-level constraints
 - **High-performance availability search** - 200x improvement (10-20ms actual vs 300ms target)
-- **Smart API design** - Auto-calculated end times, service metadata in responses
 - **Flexible scheduling** - Support for recurring and one-time breaks
 - **Production-ready architecture** supporting 50k+ bookings/day
 - **Clean, maintainable code** with TypeScript and NestJS
