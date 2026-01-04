@@ -6,6 +6,7 @@ import {
   ApiSecurity,
   ApiParam,
   ApiQuery,
+  ApiExcludeEndpoint,
 } from '@nestjs/swagger';
 import { AppointmentsService } from '../services/appointments.service';
 import { DoctorsService } from '../services/doctors.service';
@@ -47,6 +48,7 @@ export class DoctorsController {
   }
 
   @Get(':id')
+  @ApiExcludeEndpoint() // Hidden from Swagger - not currently used in frontend
   @ApiOperation({
     summary: 'Get a single doctor by ID',
     description: 'Retrieves details of a specific doctor',
@@ -69,6 +71,7 @@ export class DoctorsController {
   }
 
   @Get(':id/schedule')
+  @ApiExcludeEndpoint() // Hidden from Swagger - not currently used in frontend
   @ApiOperation({
     summary: "Get doctor's schedule for calendar view",
     description:

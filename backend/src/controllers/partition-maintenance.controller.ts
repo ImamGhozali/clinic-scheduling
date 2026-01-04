@@ -1,12 +1,15 @@
 import { Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import { ApiExcludeController } from '@nestjs/swagger';
 import { PartitionMaintenanceService } from '../services/partition-maintenance.service';
 import { TenantGuard } from '../guards/tenant.guard';
 
 /**
  * Controller for partition maintenance operations
  * Endpoints for testing and manual partition management
+ * Hidden from Swagger - admin/maintenance endpoints only
  */
 @Controller('partitions')
+@ApiExcludeController() // Hidden from Swagger - internal maintenance endpoints
 export class PartitionMaintenanceController {
   constructor(
     private readonly partitionService: PartitionMaintenanceService,

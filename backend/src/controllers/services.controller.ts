@@ -5,6 +5,7 @@ import {
   ApiResponse,
   ApiSecurity,
   ApiParam,
+  ApiExcludeEndpoint,
 } from '@nestjs/swagger';
 import { ServicesService } from '../services/services.service';
 import { TenantGuard } from '../guards/tenant.guard';
@@ -32,6 +33,7 @@ export class ServicesController {
   }
 
   @Get(':id')
+  @ApiExcludeEndpoint() // Hidden from Swagger - not currently used in frontend
   @ApiOperation({
     summary: 'Get a specific service by ID',
     description: 'Returns details of a single service',

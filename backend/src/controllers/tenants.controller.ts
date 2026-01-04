@@ -1,5 +1,5 @@
 import { Controller, Get, Param } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiExcludeEndpoint } from '@nestjs/swagger';
 import { TenantsService } from '../services/tenants.service';
 
 @ApiTags('Tenants')
@@ -21,6 +21,7 @@ export class TenantsController {
   }
 
   @Get(':id')
+  @ApiExcludeEndpoint() // Hidden from Swagger - not currently used in frontend
   @ApiOperation({
     summary: 'Get a specific tenant',
     description: 'Retrieves details of a specific tenant by ID',

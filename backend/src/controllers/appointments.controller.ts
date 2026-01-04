@@ -18,6 +18,7 @@ import {
   ApiParam,
   ApiQuery,
   ApiHeader,
+  ApiExcludeEndpoint,
 } from '@nestjs/swagger';
 import { AppointmentsService } from '../services/appointments.service';
 import { TenantGuard } from '../guards/tenant.guard';
@@ -109,6 +110,7 @@ export class AppointmentsController {
   }
 
   @Delete(':id')
+  @ApiExcludeEndpoint() // Hidden from Swagger - not currently used in frontend
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
     summary: 'Cancel an appointment',
@@ -135,6 +137,7 @@ export class AppointmentsController {
   }
 
   @Get(':id')
+  @ApiExcludeEndpoint() // Hidden from Swagger - not currently used in frontend
   @ApiOperation({
     summary: 'Get appointment by ID',
     description: 'Retrieves a single appointment with all relations',
@@ -160,6 +163,7 @@ export class AppointmentsController {
   }
 
   @Get()
+  @ApiExcludeEndpoint() // Hidden from Swagger - not currently used in frontend
   @ApiOperation({
     summary: 'List appointments with filters',
     description: 'Retrieves appointments for the tenant with optional filters',
