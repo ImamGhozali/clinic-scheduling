@@ -301,7 +301,7 @@ CREATE INDEX idx_appointments_doctor_calendar
     ON appointments(doctor_id, starts_at, ends_at)
     WHERE status != 'cancelled';
 
--- Tenant-scoped queries
+-- Recent appointments
 CREATE INDEX idx_appointments_tenant_created 
     ON appointments(tenant_id, created_at DESC);
 

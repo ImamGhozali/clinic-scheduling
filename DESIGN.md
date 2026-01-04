@@ -264,14 +264,18 @@ EXCLUDE USING gist (
 ```sql
 -- Hot path: availability search
 idx_appointments_tenant_doctor_time (tenant_id, doctor_id, starts_at)
+  WHERE status = 'scheduled'
 idx_appointments_tenant_status_time (tenant_id, status, starts_at, ends_at)
+  WHERE status IN ('scheduled', 'completed')
 idx_working_hours_tenant_doctor_day_available (tenant_id, doctor_id, day_of_week, is_available)
+  WHERE is_available = true
 idx_breaks_tenant_time_range (tenant_id, starts_at, ends_at)
 idx_recurring_breaks_tenant_resource (tenant_id, resource_type, resource_id)
+  WHERE is_active = true
 
--- Conflict detection (used by exclusion constraint)
-idx_appointments_conflict_check (doctor_id, starts_at, ends_at) 
-  WHERE status = 'scheduled'
+-- Conflict detection (automatic GIST index from exclusion constraint)
+-- Note: Exclusion constraints automatically create GIST indexes per partition
+-- Named: appointments_YYYY_MM_no_overlap_excl (created automatically)
 
 -- Junction table optimization
 idx_appointment_devices_device_appointment (device_id, appointment_id)
@@ -292,7 +296,6 @@ WHERE is_active = true      -- Only index active doctors
 
 **Impact**: Reduces index size by ~40% (cancelled appointments excluded).
 
-
 ### Bottlenecks & Mitigation
 
 **Bottleneck 1**: Availability search during peak hours
@@ -305,9 +308,92 @@ WHERE is_active = true      -- Only index active doctors
 **Bottleneck 3**: Large tenant with 100+ doctors
 - **Mitigation**: Limit availability search to qualified doctors only (via doctor_services junction table)
 - **Result**: Typically searches 2-5 doctors per service instead of all doctors
+
+#### 6. **Database Partitioning Strategy**
+
+**Decision**: Partition appointments table by **month** (time-based) instead of by tenant (entity-based).
+
+**Rationale**:
+
+1. **Query Pattern Alignment**
+   - Most queries filter by time range: `WHERE starts_at BETWEEN ... AND tenant_id = ?`
+   - PostgreSQL can efficiently prune partitions based on time ranges
+   - With monthly partitions: queries spanning 7 days only scan 1-2 partitions
+   - With tenant partitions: would need to scan entire tenant's history (millions of rows)
+
+2. **Automatic Partition Pruning**
+   ```sql
+   -- Common query pattern:
+   SELECT * FROM appointments 
+   WHERE starts_at BETWEEN '2025-01-15' AND '2025-01-22'
+     AND tenant_id = 1;
+   
+   -- With month partitioning (current):
+   -- ✅ PostgreSQL automatically scans only appointments_2025_01
+   -- ✅ Small partition = fast scan (thousands of rows)
+   
+   -- With tenant partitioning (alternative):
+   -- ❌ Must scan entire appointments_tenant_1 partition
+   -- ❌ No time-based pruning (millions of rows)
+   ```
+
+3. **Efficient Data Archival**
+   ```sql
+   -- Drop old data instantly (current approach):
+   DROP TABLE appointments_2023_01;  -- Milliseconds
+   
+   -- vs. With tenant partitioning:
+   DELETE FROM appointments_tenant_1 
+   WHERE starts_at < '2023-01-01';  -- Slow, causes table bloat
+   ```
+
+4. **Predictable Growth and Maintenance**
+   - Monthly partitions: Create 1 partition per month (automated via cron)
+   - Tenant partitions: Create 1 partition per new tenant (unpredictable timing)
+   - Monthly: Balanced partition sizes (~50k rows per month across all tenants)
+   - Tenant: Unbalanced (large tenants = millions of rows, small tenants = hundreds)
+
+5. **Index Size Optimization**
+   - Small partitions = small indexes (~5-10MB per month)
+   - Large single-tenant partitions = large indexes (~500MB+)
+   - Query performance degrades as indexes grow
+
+**Alternative Considered: Partition by Tenant**
+
+**Why tenant partitioning was rejected**:
+- ❌ Poor query performance (no automatic time-based pruning)
+- ❌ Difficult archival (can't drop tenant partitions without losing all data)
+- ❌ Unpredictable partition creation (dependent on tenant onboarding)
+- ❌ Unbalanced partition sizes (large tenants dominate)
+- ❌ Multi-tenant queries require union across all partitions
+
+**When to use tenant partitioning instead**:
+- Tenant-specific data residency requirements (EU vs US servers)
+- Queries rarely filter by time (e.g., "export all tenant data ever")
+- Need to physically isolate tenant data on different storage
+- Tenant-specific backup/restore requirements
+
+**Hybrid Approach: Sub-partitioning** (not currently needed):
+
+If a few "mega-tenants" dominate traffic, could implement both:
+
+```sql
+-- First partition by month, then sub-partition by tenant
+CREATE TABLE appointments PARTITION BY RANGE (starts_at);
+
+CREATE TABLE appointments_2025_01 PARTITION OF appointments
+    FOR VALUES FROM ('2025-01-01') TO ('2025-02-01')
+    PARTITION BY LIST (tenant_id);
+
+CREATE TABLE appointments_2025_01_tenant_1 PARTITION OF appointments_2025_01
+    FOR VALUES IN (1);
+```
+
+**Current verdict**: Monthly partitioning is optimal for scheduling workloads. Time-based queries dominate, and monthly partitions align perfectly with query patterns. Tenant isolation is already handled efficiently via indexed `tenant_id` column.
+
 ---
 
-## 6. Critical Architectural Trade-offs
+## 7. Critical Architectural Trade-offs
 
 ### 1. **Exclusion Constraints vs. Application-Level Locking**
 **Decision**: Database-level exclusion constraints for conflict prevention
